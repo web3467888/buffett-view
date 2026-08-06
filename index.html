@@ -1417,6 +1417,11 @@
   .fb-item p{font-size:13.5px;color:var(--ink);line-height:1.7;margin:0 0 6px;white-space:pre-wrap;word-break:break-word;}
   .fb-contact{font-size:12px;color:var(--blue);}
   .fb-empty{text-align:center;color:var(--muted);font-size:13px;padding:30px 0;}
+  .fb-done-badge{font-size:11px;font-weight:700;padding:2px 9px;border-radius:999px;background:rgba(46,107,82,.12);color:var(--green);}
+  .fb-item.done{opacity:.72;border-style:dashed;}
+  .admin-tip{font-size:12px;color:var(--muted);background:#F6F7F9;border:1px solid var(--line);border-radius:10px;padding:9px 12px;margin:8px 0 4px;line-height:1.6;}
+  .home-disclaimer{font-size:13px;color:var(--muted);background:#F6F7F9;border:1px solid var(--line);border-radius:12px;padding:10px 16px;max-width:680px;margin:0 auto 22px;line-height:1.65;}
+  .home-disclaimer b{color:var(--red);}
   .fb-count{font-size:12px;color:var(--muted);margin-bottom:2px;}
 
   /* 建议弹窗里的联系站长卡（types 上方，对访客可见） */
@@ -2026,6 +2031,7 @@
 <!-- ================= 首页 ================= -->
 <section class="view show" id="view-home">
   <div class="hero">
+    <div class="home-disclaimer">⚠️ 风险提示：本站所有内容仅供学习与教育参考，<b>不构成任何投资建议或邀约</b>。投资有风险，入市需谨慎；请用闲钱投资、勿加杠杆、独立判断。示例数据非实时行情，请勿据此交易。</div>
     <h1>用<em class="hl">理性</em>的<em class="hl">逆向</em>思维，在<em class="hl">能力圈</em>内，<br/>以<em class="hl">安全边际</em>买入有<em class="hl">护城河</em>的好生意，<em class="hl">长期持有</em>，<em class="hl">本分做人</em>。</h1>
     <p class="slogan">这不是一个荐股号，而是一套<b>人人能用的投资指引</b>——把巴菲特与芒格的价值观，变成你可以照着做的步骤、可以亲手算的数字、可以自己筛的条件。</p>
     <div class="words" id="wordList">
@@ -3425,9 +3431,11 @@
         <div style="display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:4px;">
           <span class="fb-count" id="fbCount"></span>
           <span style="display:flex;gap:8px">
+            <button class="rec-backup-btn" onclick="fbExport()">⬇ 导出备份</button>
             <button class="rec-backup-btn" onclick="setOwnerMode(false);adminClose()">退出站长模式</button>
           </span>
         </div>
+        <div class="admin-tip">📦 反馈数据同时存于 Supabase（平台每日自动备份）。点击「导出备份」可下载一份离线 JSON 存档，建议每月存一份。所有用户数据均跟随各自账号，仅用于改进网站，符合隐私最小化原则。</div>
         <div class="fb-list" id="fbList"></div>
       </div>
     </div>
@@ -16992,17 +17000,29 @@ async function loadFeedbackList(){
   cnt.textContent='共 '+list.length+' 条反馈（最新在前）';
   box.innerHTML=list.map(function(f){
     var d=(f.created_at||'').replace('T',' ').slice(0,16);
-    return '<div class="fb-item">'+
-      '<div class="fb-item-head"><span class="fb-tag">'+esc(f.type||'其他')+'</span><span class="fb-time">'+esc(d)+'</span></div>'+
+    return '<div class="fb-item'+(f.done?' done':'')+'">'+
+      '<div class="fb-item-head"><span class="fb-tag">'+esc(f.type||'其他')+'</span>'+(f.done?'<span class="fb-done-badge">✓ 已处理</span>':'')+'<span class="fb-time">'+esc(d)+'</span></div>'+
       '<p>'+esc(f.content||'')+'</p>'+
       (f.contact?'<div class="fb-contact">📮 '+esc(f.contact)+'</div>':'')+
-      '<div style="margin-top:8px"><button class="log-act danger" onclick="fbDelete(\''+esc(f.id)+'\')">删除</button></div>'+
+      '<div style="margin-top:8px;display:flex;gap:8px">'+
+        '<button class="log-act" onclick="fbToggleDone(\''+esc(f.id)+'\')">'+(f.done?'↩ 标为未处理':'✓ 标记已处理')+'</button>'+
+        '<button class="log-act danger" onclick="fbDelete(\''+esc(f.id)+'\')">删除</button>'+
+      '</div>'+
     '</div>';
   }).join('');
 }
 async function fbDelete(id){
   try{ var arr=JSON.parse(localStorage.getItem('kb_feedback')||'[]'); arr=arr.filter(function(x){ return x.id!==id; }); localStorage.setItem('kb_feedback', JSON.stringify(arr)); }catch(e){}
   if(cloudEnabled()){ try{ await _sb.from('feedback').delete().eq('id', id); }catch(e){} }
+  loadFeedbackList();
+}
+async function fbToggleDone(id){
+  var list=await getFeedbackAll(); var f=null;
+  list.forEach(function(x){ if(x.id===id) f=x; });
+  if(!f) return;
+  var done=!f.done;
+  try{ var arr=JSON.parse(localStorage.getItem('kb_feedback')||'[]'); for(var i=0;i<arr.length;i++){ if(arr[i].id===id){ arr[i].done=done; break; } } localStorage.setItem('kb_feedback', JSON.stringify(arr)); }catch(e){}
+  if(cloudEnabled()){ try{ await _sb.from('feedback').update({done:done}).eq('id', id); }catch(e){} }
   loadFeedbackList();
 }
 function fbExport(){

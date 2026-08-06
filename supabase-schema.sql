@@ -68,5 +68,9 @@ drop policy if exists "fb_delete" on public.feedback;
 create policy "fb_delete" on public.feedback
   for delete using (true);
 
+drop policy if exists "fb_update" on public.feedback;
+create policy "fb_update" on public.feedback
+  for update using (true) with check (true);
+
 -- 授予 anon / authenticated 角色对 feedback 的读写权限（访客匿名提交反馈、站长查看）
 grant all on public.feedback to anon, authenticated;
