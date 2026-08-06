@@ -1,0 +1,11 @@
+# 项目记忆（含本地工作日志，勿上传）
+.workbuddy/
+
+# 部署产物（由根目录 index.html 直接部署，dist 是手工上传的副本，不纳入 Git）
+dist/
+
+# 系统垃圾文件
+nul
+.DS_Store
+Thumbs.db
+*.log

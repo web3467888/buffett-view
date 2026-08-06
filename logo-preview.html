@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>招财猫 Logo 预览 · 巴菲特的投资观</title>
+<style>
+  :root{ --navy:#0F172A; --gold:#C9A24E; --ink:#1A1D20; --muted:#71717A; --line:#ECECF0; }
+  *{box-sizing:border-box;}
+  body{margin:0;font-family:'PingFang SC','Microsoft YaHei',system-ui,sans-serif;background:#FBFBFD;color:var(--ink);padding:40px 20px 80px;}
+  h1{font-family:Georgia,'Songti SC',serif;font-size:30px;margin:0 0 6px;}
+  .sub{color:var(--muted);margin:0 0 36px;font-size:15px;}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(300px,1fr));gap:28px;max-width:1080px;margin:0 auto;}
+  .card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:26px;box-shadow:0 6px 24px rgba(15,23,42,.05);}
+  .card h3{margin:0 0 4px;font-size:16px;font-weight:700;}
+  .card p{margin:0 0 18px;color:var(--muted);font-size:13px;line-height:1.6;}
+  .stage{display:flex;align-items:center;justify-content:center;min-height:230px;border-radius:14px;padding:18px;}
+  .stage.navy{background:#0F172A;}
+  .stage.light{background:#fff;border:1px dashed var(--line);}
+  .stage.gray{background:#f4f4f6;}
+  .stage svg{width:200px;height:200px;display:block;}
+  .row{display:flex;gap:14px;align-items:flex-end;}
+  .row svg{width:auto;}
+  .tag{display:inline-block;margin-top:14px;font-size:12px;color:var(--gold);background:#FBF6EA;padding:4px 10px;border-radius:999px;}
+  .fav{display:flex;flex-direction:column;align-items:center;gap:6px;}
+  .fav span{font-size:11px;color:var(--muted);}
+  footer{max-width:1080px;margin:40px auto 0;color:var(--muted);font-size:13px;line-height:1.8;}
+  code{background:#f4f4f6;padding:2px 6px;border-radius:6px;font-size:12px;}
+</style>
+</head>
+<body>
+  <h1>🐱 招财猫 Logo 方案</h1>
+  <p class="sub">基于网站吉祥物（招财猫）原配色，套用品牌色 深海军蓝 #0F172A + 香槟金 #C9A24E。文件：<code>logo.svg</code> / <code>logo-wordmark.svg</code></p>
+
+  <!-- 定义招财猫 symbol，供下方复用 -->
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <symbol id="cat" viewBox="70 15 540 640">
+      <path d="M 205 468 C 118 486 84 420 124 384 C 154 357 186 384 176 406" fill="none" stroke="#E0A93E" stroke-width="42" stroke-linecap="round"/>
+      <path d="M 205 468 C 118 486 84 420 124 384 C 154 357 186 384 176 406" fill="none" stroke="#FFFDF5" stroke-width="32" stroke-linecap="round"/>
+      <circle cx="126" cy="392" r="13" fill="#F9A8B8"/>
+      <ellipse cx="340" cy="600" rx="215" ry="46" fill="#E0564F" stroke="#C2433D" stroke-width="4"/>
+      <path d="M 140 588 Q 340 616 540 588" fill="none" stroke="#F48A80" stroke-width="4" stroke-linecap="round" opacity="0.65"/>
+      <path d="M 200 130 L 240 34 L 312 92 Z" fill="#FFFDF5" stroke="#E0A93E" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M 480 130 L 440 34 L 368 92 Z" fill="#FFFDF5" stroke="#E0A93E" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M 217 116 L 240 58 L 291 92 Z" fill="#F9A8B8"/>
+      <path d="M 463 116 L 440 58 L 389 92 Z" fill="#F9A8B8"/>
+      <path d="M 175 250 C 175 158 249 85 340 85 C 431 85 505 158 505 250 C 505 380 465 545 340 575 C 215 545 175 380 175 250 Z" fill="#FFFDF5" stroke="#E0A93E" stroke-width="5" stroke-linejoin="round"/>
+      <path d="M 502 336 C 556 332 581 292 566 260" fill="none" stroke="#E0A93E" stroke-width="46" stroke-linecap="round"/>
+      <path d="M 502 336 C 556 332 581 292 566 260" fill="none" stroke="#FFFDF5" stroke-width="36" stroke-linecap="round"/>
+      <circle cx="553" cy="240" r="44" fill="#FFFDF5" stroke="#E0A93E" stroke-width="5"/>
+      <ellipse cx="553" cy="254" rx="15" ry="12" fill="#F9A8B8"/>
+      <circle cx="538" cy="230" r="7.5" fill="#F9A8B8"/>
+      <circle cx="568" cy="230" r="7.5" fill="#F9A8B8"/>
+      <path d="M 336 84 C 330 56 352 42 344 22" fill="none" stroke="#E0A93E" stroke-width="5" stroke-linecap="round"/>
+      <rect x="205" y="350" width="270" height="34" rx="17" fill="#E0564F" stroke="#C2433D" stroke-width="3.5"/>
+      <circle cx="340" cy="404" r="19" fill="#F6C445" stroke="#D9A441" stroke-width="3.5"/>
+      <path d="M 331 398 Q 340 406 349 398" fill="none" stroke="#D9A441" stroke-width="3" stroke-linecap="round"/>
+      <circle cx="321" cy="457" r="12" fill="#F6C445" stroke="#D9A441" stroke-width="3"/>
+      <circle cx="359" cy="457" r="12" fill="#F6C445" stroke="#D9A441" stroke-width="3"/>
+      <ellipse cx="340" cy="472" rx="30" ry="17" fill="#F6C445" stroke="#D9A441" stroke-width="3"/>
+      <path d="M 340 444 L 340 486" stroke="#D9A441" stroke-width="3"/>
+      <circle cx="275" cy="238" r="27" fill="#43291C"/>
+      <circle cx="405" cy="238" r="27" fill="#43291C"/>
+      <circle cx="281" cy="230" r="9" fill="#FFFFFF"/>
+      <circle cx="411" cy="230" r="9" fill="#FFFFFF"/>
+      <circle cx="269" cy="246" r="4.5" fill="#FFFFFF" opacity="0.85"/>
+      <circle cx="399" cy="246" r="4.5" fill="#FFFFFF" opacity="0.85"/>
+      <circle cx="222" cy="292" r="20" fill="#F9A8B8" opacity="0.85"/>
+      <circle cx="458" cy="292" r="20" fill="#F9A8B8" opacity="0.85"/>
+      <path d="M 328 264 Q 340 259 352 264 L 340 284 Z" fill="#E8956A"/>
+      <path d="M 316 295 Q 329 307 340 300" fill="none" stroke="#43291C" stroke-width="4.5" stroke-linecap="round"/>
+      <path d="M 364 295 Q 351 307 340 300" fill="none" stroke="#43291C" stroke-width="4.5" stroke-linecap="round"/>
+      <g stroke="#C9A86A" stroke-width="3" stroke-linecap="round">
+        <path d="M 196 250 L 142 239"/><path d="M 196 266 L 142 266"/><path d="M 196 282 L 146 293"/>
+        <path d="M 484 250 L 538 239"/><path d="M 484 266 L 538 266"/><path d="M 484 282 L 534 293"/>
+      </g>
+    </symbol>
+  </svg>
+
+  <div class="grid">
+    <!-- 1. App 图标（深底） -->
+    <div class="card">
+      <h3>① App 图标 / 头像</h3>
+      <p>海军蓝圆角徽章，招财猫居中，金边点缀。适合做网站 favicon、小程序图标、社交头像。</p>
+      <div class="stage navy">
+        <svg viewBox="0 0 512 512" width="200" height="200">
+          <defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F172A"/><stop offset="1" stop-color="#16243f"/></linearGradient></defs>
+          <rect x="0" y="0" width="512" height="512" rx="116" fill="url(#bg)"/>
+          <rect x="12" y="12" width="488" height="488" rx="104" fill="none" stroke="#C9A24E" stroke-width="3" opacity="0.55"/>
+          <g transform="translate(256,256) scale(0.74) translate(-340,-330)"><use href="#cat"/></g>
+        </svg>
+      </div>
+      <span class="tag">logo.svg</span>
+    </div>
+
+    <!-- 2. App 图标（浅底描边） -->
+    <div class="card">
+      <h3>② 浅色版图标</h3>
+      <p>白底 + 金边，招财猫原色。适合放在浅色背景、印刷品、或需要反白对比的场景。</p>
+      <div class="stage light">
+        <svg viewBox="0 0 512 512" width="200" height="200">
+          <rect x="0" y="0" width="512" height="512" rx="116" fill="#fff"/>
+          <rect x="12" y="12" width="488" height="488" rx="104" fill="none" stroke="#C9A24E" stroke-width="4"/>
+          <g transform="translate(256,256) scale(0.74) translate(-340,-330)"><use href="#cat"/></g>
+        </svg>
+      </div>
+      <span class="tag">白底金边</span>
+    </div>
+
+    <!-- 3. 横版标志 -->
+    <div class="card">
+      <h3>③ 横版标志（含字）</h3>
+      <p>左侧迷你徽章 + 右侧品牌字「巴菲特的投资观 / 价值投资·理性长期」。适合页眉、文档抬头。</p>
+      <div class="stage gray" style="min-height:160px">
+        <svg viewBox="0 0 660 200" width="520" height="158">
+          <defs><linearGradient id="bg2" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#0F172A"/><stop offset="1" stop-color="#16243f"/></linearGradient></defs>
+          <rect x="18" y="22" width="156" height="156" rx="36" fill="url(#bg2)"/>
+          <rect x="28" y="32" width="136" height="136" rx="28" fill="none" stroke="#C9A24E" stroke-width="2.5" opacity="0.55"/>
+          <g transform="translate(96,100) scale(0.24) translate(-340,-330)"><use href="#cat"/></g>
+          <text x="202" y="92" font-family="Georgia,'Songti SC','STSong',serif" font-size="48" font-weight="700" fill="#0F172A">巴菲特的投资观</text>
+          <rect x="204" y="108" width="46" height="4" rx="2" fill="#C9A24E"/>
+          <text x="204" y="142" font-family="'PingFang SC','Microsoft YaHei',sans-serif" font-size="22" letter-spacing="3" fill="#C9A24E">价值投资 · 理性长期</text>
+        </svg>
+      </div>
+      <span class="tag">logo-wordmark.svg</span>
+    </div>
+
+    <!-- 4. 单独吉祥物 -->
+    <div class="card">
+      <h3>④ 吉祥物本体</h3>
+      <p>透明背景的招财猫，可单独用于插画、气泡、引导语等装饰位置。</p>
+      <div class="stage light">
+        <svg viewBox="70 15 540 640" width="210" height="247"><use href="#cat"/></svg>
+      </div>
+      <span class="tag">透明 PNG/SVG</span>
+    </div>
+
+    <!-- 5. Favicon 小尺寸 -->
+    <div class="card">
+      <h3>⑤ 小尺寸表现</h3>
+      <p>16 / 32 / 64px 下的清晰度。徽章底能保住辨识度，纯猫在极小尺寸会丢失细节。</p>
+      <div class="stage navy" style="gap:22px">
+        <div class="fav"><svg viewBox="0 0 512 512" width="64" height="64"><rect width="512" height="512" rx="116" fill="#0F172A"/><rect x="12" y="12" width="488" height="488" rx="104" fill="none" stroke="#C9A24E" stroke-width="3" opacity="0.55"/><g transform="translate(256,256) scale(0.74) translate(-340,-330)"><use href="#cat"/></g></svg><span>64px</span></div>
+        <div class="fav"><svg viewBox="0 0 512 512" width="32" height="32"><rect width="512" height="512" rx="116" fill="#0F172A"/><rect x="12" y="12" width="488" height="488" rx="104" fill="none" stroke="#C9A24E" stroke-width="3" opacity="0.55"/><g transform="translate(256,256) scale(0.74) translate(-340,-330)"><use href="#cat"/></g></svg><span>32px</span></div>
+        <div class="fav"><svg viewBox="0 0 512 512" width="16" height="16"><rect width="512" height="512" rx="116" fill="#0F172A"/><rect x="12" y="12" width="488" height="488" rx="104" fill="none" stroke="#C9A24E" stroke-width="3" opacity="0.55"/><g transform="translate(256,256) scale(0.74) translate(-340,-330)"><use href="#cat"/></g></svg><span>16px</span></div>
+      </div>
+      <span class="tag">建议用徽章底</span>
+    </div>
+
+    <!-- 6. 单色印章 -->
+    <div class="card">
+      <h3>⑥ 单色印章（金）</h3>
+      <p>去细节、单色填充，用于盖章感、水印、或印刷单色场景。</p>
+      <div class="stage navy">
+        <svg viewBox="0 0 512 512" width="200" height="200">
+          <rect x="0" y="0" width="512" height="512" rx="116" fill="#0F172A"/>
+          <g transform="translate(256,256) scale(0.74) translate(-340,-330)" fill="#C9A24E" opacity="0.92">
+            <use href="#cat"/>
+          </g>
+        </svg>
+      </div>
+      <span class="tag">单色模式</span>
+    </div>
+  </div>
+
+  <footer>
+    说明：以上均基于网站原招财猫绘制代码，配色与页面一致（奶白 #FFFDF5、金 #E0A93E、红 #E0564F、粉 #F9A8B8、棕描边 #43291C）。<br>
+    可直接取用：<code>logo.svg</code>（深底图标）、<code>logo-wordmark.svg</code>（横版含字）。需要 PNG / 不同底色 / 圆形图标，告诉我即可。
+  </footer>
+</body>
+</html>
