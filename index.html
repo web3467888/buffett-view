@@ -2029,7 +2029,7 @@
       <span class="nav-ind" id="navInd"></span>
     </nav>
     <div class="header-user" id="headerUser">
-      <button class="header-fb" onclick="feedbackOpen()">💡 建议</button>
+      <button class="header-fb" onclick="feedbackOpen()">📮 联系</button>
       <button class="header-login" id="headerLoginBtn" onclick="openLogin()">👤 登录</button>
         <span class="header-logged" id="headerLogged" style="display:none">
           <div class="login-dropdown">
@@ -3401,31 +3401,16 @@
   </div>
 </div>
 
-<!-- ===== 建议反馈弹窗 ===== -->
+<!-- ===== 联系我弹窗（仅展示站长微信/邮箱，不收集内容、不开后台） ===== -->
 <div class="login-overlay" id="fbOverlay" style="display:none" onclick="if(event.target===this)feedbackClose()">
   <div class="login-box">
     <div class="login-body">
       <div style="display:flex;justify-content:space-between;align-items:center;">
-        <b style="font-size:16px;color:var(--navy)">建议反馈</b>
+        <b style="font-size:16px;color:var(--navy)">联系我</b>
         <button onclick="feedbackClose()" style="border:none;background:none;font-size:22px;line-height:1;cursor:pointer;color:var(--muted)">×</button>
       </div>
+      <p style="font-size:13px;color:var(--muted);margin:8px 0 14px;line-height:1.7">有建议、想合作，或只是想聊聊投资？直接用微信或邮箱找我，我看到就会回 ✦</p>
       <div class="fb-contact-info" id="fbContactInfo"></div>
-      <div class="fb-field">
-        <label>类型</label>
-        <div class="fb-type" id="fbType">
-          <span class="fb-chip on" data-t="建议" onclick="fbPickType(this)">💡 建议</span>
-          <span class="fb-chip" data-t="报错" onclick="fbPickType(this)">🐞 报错</span>
-          <span class="fb-chip" data-t="其他" onclick="fbPickType(this)">💬 其他</span>
-        </div>
-      </div>
-      <div class="fb-field">
-        <label>内容</label>
-        <textarea id="fbContent" placeholder="说说你的建议，或遇到的任何问题——站长会根据反馈持续改进本站…"></textarea>
-      </div>
-      <div class="login-field"><label>联系方式（选填，方便回复你）</label><input type="text" id="fbContact" placeholder="邮箱 / 推特 / 微信，可留空"/></div>
-      <div class="login-err" id="fbErr"></div>
-      <button class="login-submit" id="fbSubmitBtn" onclick="submitFeedback()">提交反馈</button>
-      <div class="login-note">你的反馈仅发送给站长用于改进网站，不经过任何第三方广告追踪。<br/><span id="adminLink" style="color:var(--blue);cursor:pointer;font-weight:600;display:none" onclick="adminOpen()">🔐 站长查看反馈</span></div>
     </div>
   </div>
 </div>
@@ -16872,7 +16857,8 @@ var SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 // 👇 小后台访问码：打开「建议反馈」管理后台时输入的密码（仅站长可见反馈）。留空则任何人都能打开后台（不推荐）。可自行改成你记得住的字符串。
 // 用了半角 ! 方便键盘直接输入；adminAuth 已做全/半角兼容（万一打成全角「！」也能进）。
 var ADMIN_CODE = 'Awen2026!';
-// 👇 联系方式（显示在网站底部）：推特账号名（不含 @）与接收反馈的邮箱。留空则不显示对应入口。
+// 👇 联系方式（显示在网站底部 / 招财猫气泡 / 联系弹窗）：微信号、推特账号（不含 @）、接收反馈的邮箱。每一项留空则不显示对应入口。
+var CONTACT_WECHAT = 'yangya109109';
 var CONTACT_TWITTER = 'web3467888';
 var CONTACT_EMAIL = 'manriquezzurie@gmail.com';
 var _sb = null, _sbReady = false, _sbUser = null;
@@ -16938,47 +16924,31 @@ function applyOwnerMode(){
   var b = $('lcBubble'); if(b && b.style.display === 'block'){ lcBubble(); }
 }
 /* ============ 建议反馈 + 小后台（站点级，不跟账户） ============ */
-var _fbType = '建议';
 function renderFootContact(){
   var box = $('footContact'); if(!box) return;
   if(!OWNER_MODE){ box.innerHTML=''; box.style.display='none'; return; }
   box.style.display='';
   var h = '';
+  if(CONTACT_WECHAT) h += '<a class="foot-link" href="javascript:void(0)" onclick="copyContact(\'微信：'+esc(CONTACT_WECHAT)+'\')"><svg class="mi" viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 4C5.36 4 2 6.69 2 10c0 1.86.96 3.52 2.46 4.66L3.6 17l2.5-1.3c.74.2 1.53.31 2.4.31.18 0 .36-.01.54-.02C8.4 15.7 9.5 14.1 9.5 12.2 9.5 7.81 12.86 4 9.5 4Zm-2.2 3.2a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm4.4 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"/><path d="M22 14.2c0-2.9-2.9-5.2-6.5-5.2S9 11.3 9 14.2s2.9 5.2 6.5 5.2c.74 0 1.46-.1 2.13-.3L20.5 20l-.63-1.9C21.1 17.3 22 15.9 22 14.2Zm-8.7-1.1a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Zm4.4 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"/></svg>微信：'+esc(CONTACT_WECHAT)+'</a>';
   if(CONTACT_TWITTER) h += '<a class="foot-link" href="https://x.com/'+encodeURIComponent(CONTACT_TWITTER)+'" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5.3-7-6.1 7H1.7l8-9.2L1 2h7l4.8 6.4L18.9 2Zm-2.4 18h1.9L7.6 4H5.6l10.9 16Z"/></svg>@'+esc(CONTACT_TWITTER)+'</a>';
   if(CONTACT_EMAIL) h += '<a class="foot-link" href="mailto:'+esc(CONTACT_EMAIL)+'"><svg class="mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>'+esc(CONTACT_EMAIL)+'</a>';
   box.innerHTML = h;
 }
 function renderFbContactInfo(){
   var box = $('fbContactInfo'); if(!box) return;
-  var h = '<span class="fb-contact-hi">📮 想直接联系站长？</span><div class="fb-links">';
+  var h = '<span class="fb-contact-hi">📮 直接联系我：</span><div class="fb-links">';
+  if(CONTACT_WECHAT) h += '<a href="javascript:void(0)" onclick="copyContact(\'微信：'+esc(CONTACT_WECHAT)+'\')"><svg class="mi" viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 4C5.36 4 2 6.69 2 10c0 1.86.96 3.52 2.46 4.66L3.6 17l2.5-1.3c.74.2 1.53.31 2.4.31.18 0 .36-.01.54-.02C8.4 15.7 9.5 14.1 9.5 12.2 9.5 7.81 12.86 4 9.5 4Zm-2.2 3.2a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm4.4 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"/><path d="M22 14.2c0-2.9-2.9-5.2-6.5-5.2S9 11.3 9 14.2s2.9 5.2 6.5 5.2c.74 0 1.46-.1 2.13-.3L20.5 20l-.63-1.9C21.1 17.3 22 15.9 22 14.2Zm-8.7-1.1a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Zm4.4 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"/></svg>微信：'+esc(CONTACT_WECHAT)+'</a>';
   if(CONTACT_TWITTER) h += '<a href="https://x.com/'+encodeURIComponent(CONTACT_TWITTER)+'" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5.3-7-6.1 7H1.7l8-9.2L1 2h7l4.8 6.4L18.9 2Zm-2.4 18h1.9L7.6 4H5.6l10.9 16Z"/></svg>@'+esc(CONTACT_TWITTER)+'</a>';
   if(CONTACT_EMAIL) h += '<a href="mailto:'+esc(CONTACT_EMAIL)+'"><svg class="mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>'+esc(CONTACT_EMAIL)+'</a>';
   h += '</div>';
   box.innerHTML = h;
 }
+function copyContact(txt){ try{ if(navigator.clipboard) navigator.clipboard.writeText(txt.replace(/^微信：/,'')); }catch(e){} flashMtNote('已复制：'+txt); }
 function feedbackOpen(){
-  _fbType='建议';
-  var t=$('fbType'); if(t) t.querySelectorAll('.fb-chip').forEach(function(c){ c.classList.toggle('on', c.dataset.t==='建议'); });
-  $('fbContent').value=''; $('fbContact').value=''; $('fbErr').textContent='';
-  $('fbOverlay').style.display='flex'; setTimeout(function(){ $('fbContent').focus(); },100);
+  renderFbContactInfo();
+  $('fbOverlay').style.display='flex';
 }
 function feedbackClose(){ $('fbOverlay').style.display='none'; }
-function fbPickType(el){ _fbType=el.dataset.t; el.parentNode.querySelectorAll('.fb-chip').forEach(function(c){ c.classList.toggle('on', c===el); }); }
-function submitFeedback(){
-  var content=($('fbContent').value||'').trim();
-  var contact=($('fbContact').value||'').trim();
-  var err=$('fbErr');
-  if(content.length<3){ err.textContent='请至少写 3 个字'; return; }
-  var item={ id:'fb_'+Date.now()+'_'+Math.random().toString(36).slice(2,7), type:_fbType, content:content, contact:contact, created_at:new Date().toISOString(), done:false };
-  try{ var arr=JSON.parse(localStorage.getItem('kb_feedback')||'[]'); arr.unshift(item); localStorage.setItem('kb_feedback', JSON.stringify(arr)); }catch(e){}
-  if(cloudEnabled()){ cloudFeedbackPut(item); }
-  $('fbOverlay').style.display='none';
-  flashMtNote('✅ 感谢反馈！站长会认真看每一条建议');
-}
-async function cloudFeedbackPut(item){
-  if(!cloudInit()) return;
-  try{ await _sb.from('feedback').insert({ id:item.id, type:item.type, content:item.content, contact:item.contact, created_at:item.created_at, done:false }); }catch(e){}
-}
 function adminOpen(){
   $('adminErr').textContent=''; $('adminCode').value='';
   $('adminGate').style.display='block'; $('adminPanel').style.display='none';
@@ -18822,8 +18792,9 @@ function lcBubble(e){
   c.classList.remove('wave'); void c.offsetWidth; c.classList.add('wave');
   var line=LC_LINES[Math.floor(Math.random()*LC_LINES.length)];
   var html='<span class="lc-bubble-hi">🐱 招财猫说：</span>'+line;
-  // 联系方式入口：点一下招财猫就显示（推特 + 邮箱）
+  // 联系方式入口：点一下招财猫就显示（微信 + 推特 + 邮箱）
   var contacts='';
+  if(CONTACT_WECHAT) contacts+='<a class="lc-contact-link" href="javascript:void(0)" onclick="copyContact(\'微信：'+esc(CONTACT_WECHAT)+'\')"><svg class="mi" viewBox="0 0 24 24" fill="currentColor"><path d="M9.5 4C5.36 4 2 6.69 2 10c0 1.86.96 3.52 2.46 4.66L3.6 17l2.5-1.3c.74.2 1.53.31 2.4.31.18 0 .36-.01.54-.02C8.4 15.7 9.5 14.1 9.5 12.2 9.5 7.81 12.86 4 9.5 4Zm-2.2 3.2a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Zm4.4 0a.9.9 0 1 1 0 1.8.9.9 0 0 1 0-1.8Z"/><path d="M22 14.2c0-2.9-2.9-5.2-6.5-5.2S9 11.3 9 14.2s2.9 5.2 6.5 5.2c.74 0 1.46-.1 2.13-.3L20.5 20l-.63-1.9C21.1 17.3 22 15.9 22 14.2Zm-8.7-1.1a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Zm4.4 0a.75.75 0 1 1 0 1.5.75.75 0 0 1 0-1.5Z"/></svg>微信：'+esc(CONTACT_WECHAT)+'</a>';
   if(CONTACT_TWITTER) contacts+='<a class="lc-contact-link" href="https://x.com/'+encodeURIComponent(CONTACT_TWITTER)+'" target="_blank" rel="noopener"><svg class="mi" viewBox="0 0 24 24" fill="currentColor"><path d="M18.9 2H22l-7.5 8.6L23 22h-6.8l-5.3-7-6.1 7H1.7l8-9.2L1 2h7l4.8 6.4L18.9 2Zm-2.4 18h1.9L7.6 4H5.6l10.9 16Z"/></svg>@'+esc(CONTACT_TWITTER)+'</a>';
   if(CONTACT_EMAIL) contacts+='<a class="lc-contact-link" href="mailto:'+esc(CONTACT_EMAIL)+'"><svg class="mi" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>'+esc(CONTACT_EMAIL)+'</a>';
   if(OWNER_MODE && contacts){
