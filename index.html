@@ -16914,6 +16914,19 @@ async function cloudPut(uid, key, val){
   try{ await _sb.from('user_data').upsert({ user_id:uid, data_key:key, value:val, updated_at:new Date().toISOString() }, { onConflict:'user_id,data_key' }); }catch(e){}
 }
 
+// 静默保活：每次打开站点都让 Supabase 项目产生一次轻量 API/数据库活动，避免免费项目连续 7 天无访问被自动暂停（暂停后记录板块登录/保存失效）。
+// 仅触发一次；若 CDN 的 Supabase SDK 尚未就绪则每 3 秒重试，最多 10 次；查询失败静默忽略，不影响页面。
+var _kaFired = false, _kaTries = 0;
+function cloudKeepAlive(){
+  if(_kaFired) return;
+  if(!cloudInit()){ if(_kaTries++ < 10) setTimeout(cloudKeepAlive, 3000); return; }
+  _kaFired = true;
+  try{
+    var q = _sb.from('user_data').select('data_key').limit(1);
+    if(q && q.then) q.then(function(){}).catch(function(){});
+  }catch(e){}
+}
+
 /* ============ 站长模式：仅站长可见的入口 ============ */
 var OWNER_MODE = false;
 try{ OWNER_MODE = sessionStorage.getItem('kb_owner_mode') === '1'; }catch(e){}
@@ -17069,6 +17082,7 @@ async function diagSupabase(){
 }
 // 页面加载后：若已配置云端且本地有会话，自动恢复 Supabase 会话并拉取云端数据（避免刷新后「本地登录但云端未同步」）
 window.addEventListener('load', function(){
+  cloudKeepAlive(); // 静默保活：每次打开站点都让 Supabase 项目产生活动，避免免费项目 7 天无访问被自动暂停
   reloadAccountVars(); // 本地已登录或匿名：按当前 kbSession 重载模块级收藏变量
   if(cloudEnabled() && kbSession && _sb){
     _sb.auth.getSession().then(function(r){
