@@ -1,0 +1,24 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const html=fs.readFileSync('index.html','utf8');for(const m of html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/gi))if(!/src=|application\/ld\+json/.test(m[1])&&m[2].trim())new vm.Script(m[2]);
+const store={},ctx={URL,URLSearchParams,TextDecoder,AbortController,setTimeout,clearTimeout,console,module:{exports:{}},scrFin:{},scrQuotes:{},scrConds:{},BOND_YIELD_CN:1.7,BOND_YIELD_US:4.3,stocks:[{code:'600519',market:'A股'}],kvGet:(k,d)=>store[k]||d,kvSet:(k,v)=>store[k]=v,getCircleCheck:()=>null};
+vm.createContext(ctx);vm.runInContext(fs.readFileSync('data-integrity.js','utf8'),ctx);vm.runInContext(fs.readFileSync('screener-v2.js','utf8'),ctx);
+const today=ctx.todayCN(),year=+today.slice(0,4)-1;const f=(value,period=year+'-12-31')=>({value,source:'https://example.org/report',period,observedAt:today});
+const s={code:'600519',market:'A股',moat:'品牌'};ctx.researchSnapshot.stocks[s.code]={roe:f(6.89),fcf:f(100),annualRoe:f([{year,roe:6.89},{year:year-1,roe:20},{year:year-2,roe:20}]),dps:f(2,today),history:{...f([...Array(12).fill(10),...Array(12).fill(20)],today),start:year-3+'-01-31',end:today,latestPE:10,frequency:'monthly-last-available'}};ctx.scrQuotes[s.code]={price:100,pe:10,date:today};
+let n=0;function check(label,fn){fn();n++;console.log('PASS '+label);}
+check('真实样本按秩计算位置，不用经验上下界',()=>assert.equal(ctx.getValPercentile(s).pct,25));
+check('保留四因子权重：低ROE仍可有95分，但不通过质量门槛',()=>{assert.equal(ctx.calcSignalScore(s),95);assert.equal(ctx.qualityStatus(s).state,'fail');assert.ok(!ctx.renderSignal(s).includes('优先研究'));});
+check('高ROE不能跳过人工护城河证据',()=>{ctx.researchSnapshot.stocks[s.code].roe=f(30);ctx.researchSnapshot.stocks[s.code].annualRoe=f([0,1,2].map(d=>({year:year-d,roe:30})));assert.equal(ctx.qualityStatus(s).state,'unknown');});
+check('财务及人工证据均通过才出现优先研究',()=>{store.scr_moat_reviews={[s.code]:{date:today,source:'https://example.org/evidence'}};assert.equal(ctx.qualityStatus(s).state,'pass');assert.ok(ctx.renderSignal(s).includes('优先研究'));});
+check('能力圈明确不理解阻止机会信号',()=>{ctx.getCircleCheck=()=> 'no';assert.equal(ctx.qualityStatus(s).state,'fail');ctx.getCircleCheck=()=>null;});
+check('缺股息不以0分冒充完整评分',()=>{const old=ctx.researchSnapshot.stocks[s.code].dps;delete ctx.researchSnapshot.stocks[s.code].dps;assert.equal(ctx.calcSignalScore(s),null);ctx.researchSnapshot.stocks[s.code].dps=old;});
+check('过期财报不得参与质量核验',()=>{const old=ctx.researchSnapshot.stocks[s.code].roe;ctx.researchSnapshot.stocks[s.code].roe=f(30,'2018-12-31');assert.equal(ctx.scrMetric(s,'roe'),null);ctx.researchSnapshot.stocks[s.code].roe=old;});
+check('每月样本不足24不评分',()=>{const h=ctx.researchSnapshot.stocks[s.code].history,old=h.value;h.value=[10];assert.equal(ctx.getValPercentile(s),null);h.value=old;});
+check('香港不能误用人民币国债作同币种基准',()=>assert.equal(ctx.getBondCmpData({...s,market:'港股'}),null));
+check('ETF不套用企业ROE或买点评分',()=>{assert.equal(ctx.qualityStatus({code:'SPY',market:'指数'}).state,'na');assert.equal(ctx.calcSignalScore({code:'SPY',market:'指数'}),null);});
+check('中国ETF使用中国市场报价前缀和人民币',()=>{assert.equal(ctx.qtCode({code:'510300',market:'指数'}),'sh510300');assert.ok(ctx.fmtPrice(4,'指数','510300').startsWith('¥'));});
+check('HTML及来源内容转义',()=>assert.equal(ctx.escapeResearch('<img onerror="x">'),'&lt;img onerror=&quot;x&quot;&gt;'));
+check('排序缺失值置后',()=>{ctx.scrSort='signal';const a=ctx.sortStocks([{code:'missing',market:'美股'},s]);assert.equal(a[0].code,s.code);});
+check('空响应不能伪造有效报价',()=>assert.equal(Object.keys(ctx.parseQuoteResponse('blocked')).length,0));
+check('缺失分红金额必须中止，不当作零',()=>assert.throws(()=>ctx.sumTrailingDividends([{EX_DIVIDEND_DATE:today,ASSIGN_PROGRESS:'实施分配',PRETAX_BONUS_RMB:null}],today)));
+check('保留原始全部工具且数据脚本已嵌入',()=>{assert.ok(html.includes('function renderDebts()'));assert.ok(html.includes('function signalDetails(s)'));});
+(async()=>{ctx.renderStocks=()=>{};ctx.$=()=>null;ctx.fetch=async()=>{throw Error('offline');};let old=ctx.researchSnapshot;let first=ctx.fetchQuotes(),second=ctx.fetchQuotes();assert.equal(first,second);await first;assert.equal(ctx.researchSnapshot,old);assert.ok(ctx.researchError);console.log('PASS 刷新并发去重、失败保留旧数据');console.log(`${n+1} checks passed.`);})().catch(e=>{console.error(e);process.exitCode=1;});
