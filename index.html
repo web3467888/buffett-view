@@ -2200,7 +2200,7 @@
           <input type="number" id="spmt" min="0" step="100" value="5000" />
         </div>
         <div>
-          <label>预期年化收益率 <small>（%）</small></label>
+          <label>假设名义年利率 <small>（%）</small></label>
           <input type="number" id="srate" min="0" max="30" step="0.1" value="9" />
         </div>
         <div>
@@ -2212,14 +2212,14 @@
           <input type="number" id="sage" min="18" max="80" step="1" value="25" />
         </div>
       </div>
-      <div class="quote" style="margin-top:14px">"复利周期"决定投入与计息的频率。默认每月投入，9% 年化接近长期指数基金中枢。巴菲特约 20%，那是稀缺水平，普通人按 8%–10% 预期更踏实。</div>
+      <div class="quote" style="margin-top:14px">"复利周期"决定投入与计息的频率。按名义年利率除以每年期数计息，默认每月末投入；假设值不代表预期回报，未计税费与通胀。</div>
     </div>
 
     <div class="big-stat-grid">
       <div class="big-stat"><div class="l">总资产（终值）</div><div class="v green" id="cEnd">—</div></div>
       <div class="big-stat"><div class="l">总投入本金</div><div class="v" id="cInvest">—</div></div>
       <div class="big-stat"><div class="l">复利收益</div><div class="v gold" id="cGain">—</div></div>
-      <div class="big-stat"><div class="l">收益为本金的</div><div class="v" id="cMul">—</div></div>
+      <div class="big-stat"><div class="l">总资产为本金的</div><div class="v" id="cMul">—</div></div>
     </div>
 
     <div class="grid" style="margin:18px 0">
@@ -2753,7 +2753,7 @@
         <h4 class="card-h" style="font-size:16px;margin:0">十年回测模拟器 · 现在买入，十年后呢？</h4>
         <span class="scr-bt-tag">劝退短线冲动</span>
       </div>
-      <p style="font-size:13px;color:var(--muted);margin:6px 0 12px">输入一只股票，模拟十年前买入并持有至今、分红再投资的最终回报。数据为演示值，重在体会"时间 + 持有"的力量。</p>
+      <p style="font-size:13px;color:var(--muted);margin:6px 0 12px">输入一只股票，模拟十年前买入并持有至今、分红再投资的最终回报。当前未接入真实历史行情与分红再投资序列，暂不提供回测。</p>
       <div class="scr-bt-inputs">
         <input type="text" id="btQ" placeholder="输入股票名称 / 代码，如 贵州茅台 / 600519" list="btSuggest" onkeydown="if(event.key==='Enter')runBacktest()"/>
         <datalist id="btSuggest"></datalist>
@@ -4074,7 +4074,7 @@ function buildToolPanels(){
       <!-- 说明横幅 -->
       <div class="dca-banner">
         <div class="dca-banner-title">定投和一次性买入哪个更好？</div>
-        <div class="dca-banner-desc">在相同总投入、投资年限和预期年化收益率下，对比一次性投入与按月定投的期末价值、差额和相对优势。适合基金投资、ETF投资和入场方式决策。</div>
+        <div class="dca-banner-desc">在相同总投入、投资年限和假设名义年利率下，对比一次性投入与按月定投的期末价值、差额和相对优势。适合基金投资、ETF投资和入场方式决策。</div>
         <div class="dca-tags">
           <span class="dca-tag">定投对比</span>
           <span class="dca-tag">一次性投资</span>
@@ -4091,7 +4091,7 @@ function buildToolPanels(){
 
       <!-- 年化收益率滑块（拖动即时预览） -->
       <div class="dca-slider-row">
-        <label>预期年化收益率（%）<span class="dca-slider-val" id="dl_r_val">8.0%</span></label>
+        <label>假设名义年利率（%）<span class="dca-slider-val" id="dl_r_val">8.0%</span></label>
         <input type="range" id="dl_r" min="-5" max="25" step="0.5" value="8" oninput="onDcaSlider()"/>
         <div class="dca-slider-scale"><span>-5%</span><span>0%</span><span>10%</span><span>25%</span></div>
       </div>
@@ -7827,966 +7827,9 @@ function renderDebts() {
   summary.innerHTML =
     '<div class="ld-card"><div class="ld-lbl">总负债本金</div><div class="ld-val">¥' + fmtNum(Math.round(totBal)) + '</div></div>' +
     '<div class="ld-card"><div class="ld-lbl">总月供(估)</div><div class="ld-val">¥' + fmtNum(Math.round(totMp)) + '</div></div>' +
-    '<div class="ld-card"><div class="ld-lbl">加权年利率</div><div class="ld-val">' + wRate.toFixed(2) + '%</div></div>' +
-    '<div class="ld-card hot"><div class="ld-lbl">优先偿还(最高息)</div><div class="ld-val">' + ranked[0].d.name + ' · ' + topR + '%</div></div>';
-  advice.innerHTML = '🧠 <b>雪崩法建议：</b>把有限闲钱优先砸向利率最高的「' + ranked[0].d.name + '」（' + topR + '%）。高利率负债是<strong>确定性亏损</strong>，先消灭它，每还清一笔就把腾出的月供滚向下一张高息账单。这正合芒格的「机会成本」思维——别拿不确定的投资收益，去对冲确定要付的高利息。';
-}
-/* ============ ETF 投资组合收益计算器（完整版） ============ */
-// 默认ETF数据
-let etfData=[
-  {code:'VOO',weight:40,return:8,vol:15,fee:0.03},
-  {code:'QQQM',weight:20,return:10,vol:22,fee:0.15},
-  {code:'VYM',weight:20,return:6,vol:12,fee:0.06},
-  {code:'SMH',weight:20,return:12,vol:30,fee:0.35},
-];
-// ETF速查库（ret=长期年化, vol=年化波动, fee=年化管理费率%）
-const etfLibrary={
-  'VOO':{name:'Vanguard S&P 500 ETF',ret:8,vol:15,fee:0.03},'QQQM':{name:'Invesco Nasdaq 100 ETF',ret:10,vol:22,fee:0.15},
-  'VYM':{name:'Vanguard High Dividend Yield ETF',ret:6,vol:12,fee:0.06},'SMH':{name:'VanEck Semiconductor ETF',ret:12,vol:30,fee:0.35},
-  'VTI':{name:'Vanguard Total Stock Market ETF',ret:9,vol:17,fee:0.03},'BND':{name:'Vanguard Total Bond Market ETF',ret:4,vol:4,fee:0.03},
-  'VXUS':{name:'Vanguard Total International Stock ETF',ret:7,vol:18,fee:0.07},'SPLG':{name:'SPDR Portfolio S&P 500 ETF',ret:8,vol:15,fee:0.02},
-  'SCHD':{name:'Schwab US Dividend Equity ETF',ret:7,vol:13,fee:0.06},'JEPI':{name:'JPMorgan Equity Premium Income ETF',ret:7.5,vol:10,fee:0.35},
-  'GLD':{name:'SPDR Gold Shares',ret:5,vol:16,fee:0.40},'TLT':{name:'iShares 20+ Year Treasury Bond ETF',ret:4.5,vol:18,fee:0.15},
-};
-
-function renderEtfTable(){
-  const tb=$('etfBody');tb.innerHTML='';
-  etfData.forEach((e,i)=>{
-    const tr=document.createElement('tr');
-    tr.innerHTML='<td><input type="text" value="'+e.code+'" data-idx="'+i+'" data-field="code" placeholder="代码"/></td>'+
-      '<td><input type="number" value="'+e.weight+'" data-idx="'+i+'" data-field="weight" min="0" max="100" step="1"/></td>'+
-      '<td><input type="number" value="'+e.return+'" data-idx="'+i+'" data-field="return" min="0" max="50" step="0.1"/></td>'+
-      '<td><input type="number" value="'+(e.vol||'')+'" data-idx="'+i+'" data-field="vol" min="0" max="100" step="1" placeholder="可选"/></td>'+
-      '<td><input type="number" value="'+(e.fee!==undefined?e.fee:'')+'" data-idx="'+i+'" data-field="fee" min="0" max="5" step="0.01" placeholder="可选"/></td>'+
-      '<td><button class="btn-del" onclick="removeEtfRow('+i+')">删</button></td>';
-    tb.appendChild(tr);
-  });
-  // bind input events
-  tb.querySelectorAll('input').forEach(inp=>{
-    inp.addEventListener('change',()=>{
-      const idx=+inp.dataset.idx,f=inp.dataset.field;
-      if(etfData[idx])etfData[idx][f]=f==='code'?inp.value:+inp.value;
-    });
-  });
-}
-function addEtfRow(){
-  if(etfData.length>=10){alert('最多支持10支ETF');return;}
-  etfData.push({code:'',weight:0,return:8,vol:'',fee:''});
-  renderEtfTable();
-}
-function removeEtfRow(i){
-  etfData.splice(i,1);renderEtfTable();
-}
-function etfLookup(){
-  const q=$('et_lookup').value.trim().toUpperCase();
-  if(!q)return;
-  const found=etfLibrary[q]||Object.values(etfLibrary).find(e=>e.name.toUpperCase().includes(q));
-  if(found){
-    // 检查是否已存在
-    const exists=etfData.find(e=>e.code===q||(found.code&&e.code===found.code));
-    if(exists){alert('该ETF已在列表中');return;}
-    etfData.push({code:q||found.code||'',weight:0,return:found.ret,vol:found.vol,fee:found.fee||0});
-    renderEtfTable();
-    $('et_lookup').value='';
-  }else{
-    alert('未找到匹配的ETF，请手动输入代码和参数。\n支持示例：VOO/QQQM/VTI/BND/VXUS/SCHD/JEPI/GLD/TLT');
-  }
-}
-function resetEtf(){
-  etfData=[{code:'VOO',weight:40,return:8,vol:15,fee:0.03},{code:'QQQM',weight:20,return:10,vol:22,fee:0.15},{code:'VYM',weight:20,return:6,vol:12,fee:0.06},{code:'SMH',weight:20,return:12,vol:30,fee:0.35}];
-  $('et_pv').value=20000;$('et_pmt').value=2000;$('et_y').value=30;$('et_rebal').value='1';
-  $('etfResults').style.display='none';$('etfCharts').style.display='none';
-  renderEtfTable();
-}
-
-function randn(){let u=0,v=0;while(u===0)u=Math.random();while(v===0)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
-
-function calcEtfFull(){
-  const pv=+$('et_pv').value,pmt=+$('et_pmt').value,Y=+$('et_y').value,rebal=+$('et_rebal').value;
-  if(etfData.length===0){alert('请至少添加一支ETF');return;}
-
-  // 优化3：输入校验增强
-  const seen={};
-  for(const e of etfData){
-    const code=(e.code||'').trim();
-    if(!code){alert('有 ETF 代码为空，请先填写代码。');return;}
-    if((e.weight||0)<0){alert('权重不能为负数：'+code);return;}
-    if((e.return||0)<0||(e.return||0)>50){alert('年回报应介于 0% ~ 50% 之间：'+code);return;}
-    if((e.vol||'')!==''&&((e.vol<0)||(e.vol>100))){alert('波动率应介于 0% ~ 100% 之间：'+code);return;}
-    const uc=code.toUpperCase();
-    if(seen[uc]){alert('存在重复代码：'+uc);return;}
-    seen[uc]=true;
-  }
-
-  let totalW=0;etfData.forEach(e=>totalW+=(e.weight||0));
-  if(totalW<=0){alert('权重总和需大于0');return;}
-  const totalW0=totalW;
-
-  // 优化1：权重自动归一化
-  let normalized=false;
-  if(Math.abs(totalW0-100)>0.01){
-    normalized=true;
-    etfData.forEach(e=>{e.weight=(e.weight||0)/totalW0*100;});
-    renderEtfTable();
-  }
-
-  // 加权平均（费前/费后）年化回报
-  let grossReturn=0, feeDrag=0;
-  etfData.forEach(e=>{grossReturn+=(e.weight/100)*(e.return||0); feeDrag+=(e.weight/100)*((e.fee||0));});
-  const portReturn=grossReturn-feeDrag;   // 费后期望年化
-
-  // 波动率（各资产独立；费率为确定性成本，不影响波动）
-  let portVol=null;
-  const hasVol=etfData.some(e=>e.vol&&e.vol>0);
-  if(hasVol){let varSum=0;etfData.forEach(e=>{const w=e.weight/100,v=(e.vol||0)/100;varSum+=w*w*v*v;});portVol=Math.sqrt(Math.max(0,varSum))*100;}
-
-  const months=Y*12,n=etfData.length;
-  const rM=etfData.map(e=>(e.return||0)/100/12);
-  const feeM=etfData.map(e=>((e.fee||0)/100)/12);
-  const rMnet=etfData.map((e,i)=>rM[i]-feeM[i]);
-  const wM=etfData.map(e=>e.weight/100);
-  const sigmaM=etfData.map(e=>Math.max(0,(e.vol||0)/100)/Math.sqrt(12));
-
-  // —— 确定性模拟（含费率，用于对比线）——
-  let bMain=etfData.map((e,i)=>pv*wM[i]);
-  let bDrift=etfData.map((e,i)=>pv*wM[i]);
-  let bNo=etfData.map((e,i)=>pv*wM[i]);     // 不定投·费后
-  let bBase=etfData.map((e,i)=>pv*wM[i]);   // 不定投·费前（费率侵蚀基准）
-  const mainC=[],driftC=[],noContribC=[];let mainInv=pv,driftInv=pv;
-  for(let m=1;m<=months;m++){
-    for(let i=0;i<n;i++){
-      bMain[i]=bMain[i]*(1+rMnet[i])+pmt*wM[i];   // 再平衡 + 定投
-      bDrift[i]=bDrift[i]*(1+rMnet[i])+pmt*wM[i]; // 漂移 + 定投
-      bNo[i]=bNo[i]*(1+rMnet[i]);                 // 再平衡 + 不定投
-      bBase[i]=bBase[i]*(1+rM[i]);                // 再平衡 + 不定投 + 不扣费
-    }
-    mainInv+=pmt;driftInv+=pmt;
-    if(m%rebal===0&&n>1){const tot=bMain.reduce((s,x)=>s+x,0);for(let i=0;i<n;i++)bMain[i]=tot*wM[i];}
-    mainC.push({m,bal:bMain.reduce((s,x)=>s+x,0),totalInv:mainInv});
-    driftC.push({m,bal:bDrift.reduce((s,x)=>s+x,0),totalInv:driftInv});
-    noContribC.push({m,bal:bNo.reduce((s,x)=>s+x,0),totalInv:pv});
-  }
-  const endMain=bMain.reduce((s,x)=>s+x,0);
-  const endBase=bBase.reduce((s,x)=>s+x,0);
-  const endNo=bNo.reduce((s,x)=>s+x,0);
-
-  // —— 蒙特卡洛模拟（GBM + 市场因子相关性，再平衡·定投 + 一次性）——
-  const N=300, rho=0.6, rf=0.025;
-  const paths=[], lumpDDs=[], lumpFinals=[];
-  for(let p=0;p<N;p++){
-    let dca=pv, lump=pv, peak=pv, maxDD=0; const ser=[pv];
-    for(let m=1;m<=months;m++){
-      const Zm=randn(); let portR=0;
-      for(let i=0;i<n;i++){
-        const Zi=rho*Zm+Math.sqrt(1-rho*rho)*randn();
-        let r=rMnet[i]+sigmaM[i]*Zi; if(r<-0.95)r=-0.95;
-        portR+=wM[i]*r;
-      }
-      dca=dca*(1+portR)+pmt; lump=lump*(1+portR);
-      if(lump>peak)peak=lump; const dd=(peak-lump)/peak; if(dd>maxDD)maxDD=dd;
-      ser.push(dca);
-    }
-    paths.push(ser); lumpDDs.push(maxDD); lumpFinals.push(lump);
-  }
-  const p5=[],p25=[],p50=[],p75=[],p95=[];
-  for(let t=0;t<=months;t++){
-    const col=paths.map(s=>s[t]).sort((a,b)=>a-b), L=col.length;
-    p5.push(col[Math.floor(0.05*(L-1))]);p25.push(col[Math.floor(0.25*(L-1))]);
-    p50.push(col[Math.floor(0.50*(L-1))]);p75.push(col[Math.floor(0.75*(L-1))]);p95.push(col[Math.floor(0.95*(L-1))]);
-  }
-  const dcaTerm=paths.map(s=>s[months]).sort((a,b)=>a-b), Ld=dcaTerm.length;
-  const termP5=dcaTerm[Math.floor(0.05*(Ld-1))], termMed=dcaTerm[Math.floor(0.50*(Ld-1))], termP95=dcaTerm[Math.floor(0.95*(Ld-1))];
-  const lumpMed=lumpFinals.slice().sort((a,b)=>a-b)[Math.floor(0.5*(lumpFinals.length-1))];
-  const mddMed=lumpDDs.slice().sort((a,b)=>a-b)[Math.floor(0.5*(lumpDDs.length-1))];
-  const sharpe=(portVol!==null&&portVol>0)?((portReturn-rf)/portVol):null;
-  const contribGain=termMed-lumpMed;
-
-  // 显示结果
-  $('er_return').textContent=portReturn.toFixed(2)+'%';
-  $('er_volatility').textContent=portVol!==null?portVol.toFixed(1)+'%':'—%';
-  $('er_total').textContent='¥'+Math.round(termMed).toLocaleString('zh-CN');
-  $('etfResults').style.display='grid';
-
-  // 风险与情景面板
-  $('rk_sharpe').textContent=sharpe!==null?sharpe.toFixed(2):'—';
-  $('rk_mdd').textContent=(mddMed*100).toFixed(1)+'%';
-  $('rk_p95').textContent='¥'+Math.round(termP95).toLocaleString('zh-CN');
-  $('rk_p5').textContent='¥'+Math.round(termP5).toLocaleString('zh-CN');
-  $('etfRisk').style.display='grid';
-
-  // 优化1：归一化提示
-  if(normalized){$('etfNormNote').style.display='block';$('etfNormNote').textContent='ℹ️ 检测到权重总和 '+totalW0.toFixed(0)+'%（≠100%），已自动按比例归一化为 100%。';}
-  else{$('etfNormNote').style.display='none';}
-
-  // 优化4：定投贡献 + 费率侵蚀洞察
-  $('etfContribNote').style.display='block';
-  const feeErode=endBase-endMain;
-  $('etfContribNote').innerHTML='📈 若只投入初始 ¥'+Math.round(pv).toLocaleString('zh-CN')+'、此后不再定投，'+Y+'年后约 <b>¥'+Math.round(lumpMed).toLocaleString('zh-CN')+'</b>；每月定投使它多赚 <b>¥'+Math.round(contribGain).toLocaleString('zh-CN')+'</b>（占 '+((contribGain/termMed)*100).toFixed(1)+'%）。  💸 年化已扣除管理费率，'+Y+'年累计费率侵蚀约 <b>¥'+Math.round(feeErode).toLocaleString('zh-CN')+'</b>（占基准 '+((feeErode/endBase)*100).toFixed(1)+'%）。';
-
-  $('etfCharts').style.display='grid';
-
-  // 绘制图表（带蒙特卡洛置信带）
-  requestAnimationFrame(()=>{requestAnimationFrame(()=>{
-    try{drawEtfGrowthChart([
-      {data:mainC,color:'#3A5A7D',dash:false,fill:true,label:'再平衡·定投(期望)'},
-      {data:driftC,color:'#d35400',dash:true,fill:false,label:'不操作漂移·定投'},
-      {data:noContribC,color:'#A1A1AA',dash:true,fill:false,label:'再平衡·不定投'}
-    ],Y,{p5,p25,p50,p75,p95});}catch(e){console.error('etf growth',e);}
-    try{drawEtfPieChart();}catch(e){console.error('etf pie',e);}
-  });});
-}
-
-function drawEtfGrowthChart(series,Y,band){
-  const wrap=$('etfGrowthChart').parentElement,c=$('etfGrowthChart');
-  const dpr=window.devicePixelRatio||1,W=wrap.clientWidth,H=wrap.clientHeight;
-  c.width=W*dpr;c.height=H*dpr;c.style.width=W+'px';c.style.height=H+'px';
-  const ctx=c.getContext('2d');ctx.scale(dpr,dpr);
-  ctx.clearRect(0,0,W,H);
-  const main=series[0].data;
-  if(!main||main.length<2)return;
-  const padL=70,padR=20,padT=40,padB=48;
-  let maxV=0;series.forEach(s=>{const v=s.data[s.data.length-1].bal;if(v>maxV)maxV=v;});
-  if(band){for(let t=0;t<band.p95.length;t++){if(band.p95[t]>maxV)maxV=band.p95[t];}}
-  const roundMag=Math.pow(10,Math.floor(Math.log10(maxV)));
-  const niceMax=Math.ceil(maxV/roundMag)*roundMag;
-  const px=t=>padL+(W-padL-padR)*(t-1)/(main.length);
-  const py=v=>padB+(H-padT-padB)*(1-v/niceMax);
-
-  // bg
-  ctx.fillStyle='#fcfbf8';
-  roundRect(ctx,4,4,W-8,H-8,10);ctx.fill();
-
-  // grid
-  ctx.strokeStyle='rgba(200,195,185,.45)';ctx.lineWidth=1;
-  for(let g=0;g<=5;g++){
-    const val=niceMax*g/5,y=py(val);
-    ctx.beginPath();ctx.setLineDash([]);ctx.moveTo(padL,y);ctx.lineTo(W-padR,y);ctx.stroke();
-    ctx.fillStyle='#A1A1AA';ctx.font='12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';ctx.textAlign='right';
-    const txt=val>=1e8?((val/1e8).toFixed(1)+'亿'):val>=1e4?((val/1e4).toFixed(val>1e6?0:1)+'万'):(val.toFixed(0));
-    ctx.fillText('¥'+txt,padL-8,y+4);
-  }
-  // x labels
-  const xSteps=[1,Math.round(main.length*0.4),Math.round(main.length*0.67),main.length];
-  const xl=['1月',Math.round(main.length*0.4/12)+'年',Math.round(main.length*0.67/12)+'年',Y+'年'];
-  ctx.textAlign='center';
-  xSteps.forEach((si,i)=>{
-    const x=px(si),y=padB+18;
-    ctx.fillStyle='#A1A1AA';ctx.font='12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';
-    ctx.setLineDash([3,3]);ctx.beginPath();ctx.moveTo(x,padT);ctx.lineTo(x,H-padB);ctx.stroke();
-    ctx.fillText(xl[i]||'',x,y);
-  });
-  ctx.setLineDash([]);
-
-  // 蒙特卡洛置信带（先画，作为底层）
-  if(band){
-    ctx.beginPath();
-    for(let t=0;t<band.p95.length;t++){const x=px(t+1),y=py(band.p95[t]);if(t===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
-    for(let t=band.p5.length-1;t>=0;t--){const x=px(t+1),y=py(band.p5[t]);ctx.lineTo(x,y);}
-    ctx.closePath();ctx.fillStyle='rgba(47,111,176,.10)';ctx.fill();
-    ctx.beginPath();
-    for(let t=0;t<band.p75.length;t++){const x=px(t+1),y=py(band.p75[t]);if(t===0)ctx.moveTo(x,y);else ctx.lineTo(x,y);}
-    for(let t=band.p25.length-1;t>=0;t--){const x=px(t+1),y=py(band.p25[t]);ctx.lineTo(x,y);}
-    ctx.closePath();ctx.fillStyle='rgba(47,111,176,.20)';ctx.fill();
-  }
-
-  // 逐序列绘制（面积/直线）
-  series.forEach(s=>{
-    const d=s.data;
-    if(s.fill){
-      const grd=ctx.createLinearGradient(0,padT,0,H-padB);
-      grd.addColorStop(0,'rgba(47,111,176,.35)');
-      grd.addColorStop(.6,'rgba(47,111,176,.12)');
-      grd.addColorStop(1,'rgba(47,111,176,.02)');
-      ctx.beginPath();ctx.moveTo(px(1),py(d[0].bal));
-      for(let i=1;i<d.length;i++)ctx.lineTo(px(i+1),py(d[i].bal));
-      ctx.lineTo(px(d.length),H-padB);ctx.lineTo(px(1),H-padB);ctx.closePath();
-      ctx.fillStyle=grd;ctx.fill();
-    }
-    ctx.beginPath();ctx.strokeStyle=s.color;ctx.lineWidth=s.dash?2:2.5;ctx.lineJoin='round';
-    ctx.setLineDash(s.dash?[6,4]:[]);
-    ctx.moveTo(px(1),py(d[0].bal));
-    for(let i=1;i<d.length;i++)ctx.lineTo(px(i+1),py(d[i].bal));
-    ctx.stroke();ctx.setLineDash([]);
-  });
-
-  // 主线末端光点
-  const ex=px(main.length),ey=py(main[main.length-1].bal);
-  ctx.beginPath();ctx.arc(ex,ey,5,0,Math.PI*2);ctx.fillStyle='#3A5A7D';ctx.fill();
-  ctx.beginPath();ctx.arc(ex,ey,9,0,Math.PI*2);ctx.fillStyle='rgba(47,111,176,.18)';ctx.fill();
-
-  // 图例（左上，半透明底，避开曲线左低区）
-  const lx=padL+4,ly=44;const lh=(series.length+1)*20+8;
-  ctx.fillStyle='rgba(255,255,255,.92)';roundRect(ctx,lx-6,ly-8,232,lh,8);ctx.fill();
-  ctx.strokeStyle='rgba(200,195,185,.55)';ctx.lineWidth=1;ctx.stroke();
-  series.forEach((s,si)=>{
-    const yy=ly+6+si*20;const endV=s.data[s.data.length-1].bal;
-    ctx.setLineDash(s.dash?[6,4]:[]);ctx.strokeStyle=s.color;ctx.lineWidth=2.5;
-    ctx.beginPath();ctx.moveTo(lx,yy);ctx.lineTo(lx+22,yy);ctx.stroke();ctx.setLineDash([]);
-    ctx.fillStyle='#3a3a3a';ctx.font='12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';ctx.textAlign='left';
-    ctx.fillText(s.label+'  ¥'+Math.round(endV).toLocaleString('zh-CN'),lx+28,yy+4);
-  });
-  if(band){
-    const yy=ly+6+series.length*20;
-    ctx.fillStyle='rgba(47,111,176,.20)';ctx.fillRect(lx,yy-5,22,10);
-    ctx.fillStyle='#3a3a3a';ctx.font='12px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';ctx.textAlign='left';
-    ctx.fillText('95%可能区间(蒙特卡洛300条)',lx+28,yy+4);
-  }
-
-  // 标题
-  ctx.fillStyle='#0F172A';ctx.font='bold 13px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif';ctx.textAlign='left';
-  ctx.fillText('组合增长曲线对比',padL,24);
-}
-
-function drawEtfPieChart(){
-  const c=$('etfPieChart'),ctx=c.getContext('2d'),W=c.width,H=c.height,cx=W/2,cy=H/2,r=84,ir=52;
-  ctx.clearRect(0,0,W,H);
-  const colors=['#3A5A7D','#2E6B52','#B0473C','#C9A24E','#8e44ad','#3A5A7D','#27ae60','#d35400','#16a085','#e74c3c'];
-  let a=-Math.PI/2;
-  etfData.forEach((e,i)=>{
-    if(!e.weight||e.weight<=0)return;
-    const ang=e.weight/100*Math.PI*2;
-    ctx.beginPath();ctx.moveTo(cx,cy);ctx.arc(cx,cy,r,a,a+ang);ctx.closePath();
-    ctx.fillStyle=colors[i%colors.length];ctx.fill();a+=ang;
-  });
-  ctx.beginPath();ctx.arc(cx,cy,ir,0,Math.PI*2);ctx.fillStyle='#fff';ctx.fill();
-  // legend
-  $('etfPieLegend').innerHTML=etfData.filter(e=>e.weight>0).map((e,i)=>
-    '<span><i style="background:'+colors[i%colors.length]+'"></i>'+e.code+' '+e.weight+'%</span>'
-  ).join('');
-}
-
-function calcEtf(){calcEtfFull();} /* 兼容旧调用 */
-/* ============ 美债收益计算器（模板版） ============ */
-function parseDate(s){
-  const p=s.split('-');
-  if(p.length<3) return null;
-  return new Date(+p[0], +p[1]-1, +p[2]);
-}
-function dayDiff(a,b){ return Math.round((b-a)/86400000); }
-
-function calcTreasury(){
-  const amt=+$('tr_amt').value;
-  const yld=(+$('tr_yld').value)/100;
-  const cpn=(+$('tr_cpn').value)/100;
-  const bpx=+$('tr_bpx').value;
-  const spx=+$('tr_spx').value;
-  const fx=+$('tr_fx').value;
-  const bdate=parseDate($('tr_bdate').value);
-  const sdate=parseDate($('tr_sdate').value);
-
-  if(!(amt>0)||!(yld>=0)||!(cpn>=0)||!(bpx>0)||!(spx>0)||!bdate||!sdate){
-    alert('请填写有效的美债参数（金额、价格为正，日期完整）'); return;
-  }
-  if(sdate<=bdate){ alert('卖出日期需晚于买入日期'); return; }
-
-  // 面值 = 买入金额按买入价折算的债券面值总额
-  const face = amt / (bpx/100);            // 实际持有的债券面值（美元）
-  const days = dayDiff(bdate, sdate);
-  const years = days/365;
-
-  // 票息收入（按持有天数比例，每年票息 = face * cpn）
-  const couponInc = face * cpn * years;
-
-  // 资本利得（价差）：卖出收回 - 买入成本
-  const buyCost = amt;                       // 买入实际支付（美元）
-  const sellProceeds = face * (spx/100);     // 卖出收回本金（美元）
-  const capGain = sellProceeds - buyCost;
-
-  const totalUsd = couponInc + capGain;      // 总收益（美元）
-  const totalCny = totalUsd * fx;
-
-  // 年化收益率：基于买入成本，按持有年数折算
-  const annual = buyCost>0 ? Math.pow(1 + totalUsd/buyCost, 1/years) - 1 : 0;
-  const cpnPct = totalUsd!==0 ? couponInc/totalUsd*100 : 0;
-
-  // 结果卡
-  $('trResults').style.display='grid';
-  $('tr_total').textContent='$'+fmtNum(Math.round(totalUsd));
-  $('tr_total').className='tb-rc-value'+(totalUsd>=0?' g':'');
-  $('tr_annual').textContent=(annual*100).toFixed(2)+'%';
-  $('tr_annual').className='tb-rc-value'+(annual>=0?' g':'');
-  $('tr_coupon').textContent='$'+fmtNum(Math.round(couponInc));
-  $('tr_cny').textContent='¥'+fmtNum(Math.round(totalCny));
-
-  // 收益拆解
-  $('trBreakdown').style.display='block';
-  $('tr_face').textContent='$'+fmtNum(Math.round(face));
-  $('tr_gain').textContent=(capGain>=0?'+$':'-$')+fmtNum(Math.round(Math.abs(capGain)));
-  $('tr_gain').style.color=capGain>=0?'var(--green)':'#B0473C';
-  $('tr_days').textContent=days+' 天';
-  $('tr_cpnpct').textContent=cpnPct.toFixed(1)+'%';
-
-  // 芒格结论
-  generateTrMungerVerdict({ yld, cpn, annual, years, totalUsd, capGain, couponInc });
-
-  // 免责声明
-  $('trDisclaimer').style.display='block';
-
-  // 历史记录
-  saveTrHistory({ amt:Math.round(amt), bpx, spx, days, annual:+(annual*100).toFixed(2), total:Math.round(totalUsd) });
-}
-
-function resetTreasury(){
-  $('tr_amt').value=100000;
-  $('tr_yld').value=4.5;
-  $('tr_cpn').value=3.5;
-  $('tr_bdate').value='2026-01-01';
-  $('tr_bpx').value=98.5;
-  $('tr_sdate').value='2028-01-01';
-  $('tr_spx').value=100.8;
-  $('tr_fx').value=7.25;
-  $('trResults').style.display='none';
-  $('trBreakdown').style.display='none';
-  $('trMunger').style.display='none';
-  $('trDisclaimer').style.display='none';
-}
-
-function applyTbCase(){
-  // 套用演示案例：美国中长期国债 3.25% 2031/08/15
-  // 买入价 95.20（折价），持有至 2031/08/15 以 101.43 退出，实现年化约 4.18%，与卡片到期年化一致
-  $('tr_amt').value=100000;
-  $('tr_yld').value=4.18;
-  $('tr_cpn').value=3.25;
-  $('tr_bdate').value='2026-02-01';
-  $('tr_bpx').value=95.20;
-  $('tr_sdate').value='2031-08-15';
-  $('tr_spx').value=101.43;
-  $('tr_fx').value=7.25;
-  calcTreasury();
-}
-
-/* ---- 历史记录 ---- */
-function loadTrHistory(){ try{ return kvGet('tr_calc_history',[]); }catch(e){ return []; } }
-function saveTrHistory(rec){
-  const h=loadTrHistory();
-  h.unshift(rec);
-  if(h.length>10) h.pop();
-  kvSet('tr_calc_history', h);
-  renderTrHistory(h);
-}
-function renderTrHistory(h){
-  const list=$('trHistList'); if(!list) return;
-  if(!h||h.length===0){ list.innerHTML='<div class="tb-hist-empty">暂无计算记录</div>'; return; }
-  list.innerHTML=h.map(function(i){
-    return '<div class="tb-hist-item"><div><div class="tb-hist-main">$' + fmtNum(i.amt) + ' · 买 ' + i.bpx + ' / 卖 ' + i.spx + '</div><div class="tb-hist-sub">持有 ' + i.days + ' 天 · 年化 ' + i.annual + '%</div></div><div class="tb-hist-val">' + (i.total>=0?'+$':'-$') + fmtNum(Math.abs(i.total)) + '</div></div>';
-  }).join('');
-}
-function clearTrHistory(){ try{ kvSet('tr_calc_history',[]); }catch(e){} renderTrHistory([]); }
-
-/* ---- 芒格结论 ---- */
-function generateTrMungerVerdict(o){
-  const box=$('trMunger'); if(!box) return;
-  box.style.display='block';
-  let txt, src;
-  if(o.annual < 0){
-    txt='持有期居然是负收益？别被复利吓到，真正的危险是"永久损失本金"。美债至少在信用上是无风险的，但价格波动会咬人——正如我常说：如果理由不够充分，就别买。';
-    src='— 查理·芒格《穷查理宝典》';
-  } else if(o.years < 1){
-    txt='持有不到一年就想跑？美债是"无风险收益锚"，不是短线博弈工具。频繁买卖只会把确定的票息收益让给交易费和汇率价差。耐心点，让时间站在你这边。';
-    src='— 查理·芒格谈耐心';
-  } else if(o.yld < 0.03){
-    txt='预估年化不到 3%？收益率低不等于没价值——它是你衡量一切其他投资机会的"机会成本"。巴菲特说得好：先看清无风险收益，才知道别的投资是否值得冒险。';
-    src='— 沃伦·巴菲特 股东信';
-  } else if(o.capGain > o.couponInc){
-    txt='你的收益主要靠价差而非票息？这说明你押注了利率下行。押注宏观是困难的，芒格的忠告是：只在你有明显优势时才下注，否则老老实实拿票息。';
-    src='— 查理·芒格谈能力圈';
-  } else {
-    txt='票息为主、稳健持有——这正是美债该有的样子。它是资产配置的"压舱石"：确定性收益给你底气，让你在别处敢于等待真正的好机会。理性地把它当锚，而非猎物。';
-    src='— 巴芒投资指引';
-  }
-  $('trMungerText').textContent=txt;
-  $('trMungerSource').textContent=src;
-}
-/* ============ 多账户/多币种总览（模板版） ============ */
-// 全部支持币种（含中文说明）
-const MT_CURRENCIES=[
-  {code:'CNY',name:'人民币',def:1},
-  {code:'USD',name:'美元',def:7.25},
-  {code:'HKD',name:'港币',def:0.92},
-  {code:'EUR',name:'欧元',def:7.85},
-  {code:'JPY',name:'日元',def:0.048},
-  {code:'GBP',name:'英镑',def:9.20},
-  {code:'AUD',name:'澳元',def:4.75},
-  {code:'CAD',name:'加元',def:5.30},
-  {code:'SGD',name:'新加坡元',def:5.40},
-  {code:'CHF',name:'瑞士法郎',def:8.10},
-  {code:'NZD',name:'新西兰元',def:4.35},
-  {code:'KRW',name:'韩元',def:0.0053}
-];
-const MT_COLORS={CNY:'#4A6A8C',USD:'#e0a92e',HKD:'#3a8f6b',EUR:'#9b59b6',JPY:'#e67e73',GBP:'#5d8aa8',AUD:'#d9883b',CAD:'#7fb069',SGD:'#c0504d',CHF:'#8e7cc3',NZD:'#46a59b',KRW:'#b08968'};
-let mtRates={};          // {USD:7.25, ...}  表示 1 外币 = ? CNY
-let mtBase='CNY';
-let mtAccounts=[];       // {name, code, balance}
-
-function getCur(code){ return MT_CURRENCIES.find(function(c){return c.code===code;}) || {code:code,name:code,def:1}; }
-
-function loadMtRates(){
-  try{
-    const saved=kvGet('mt_rates',null);
-    if(saved && Object.keys(saved).length){ mtRates=saved; return; }
-  }catch(e){}
-  MT_CURRENCIES.forEach(function(c){ mtRates[c.code]=c.def; });
-}
-function saveMtRates(){ kvSet('mt_rates', mtRates); flashMtNote('已保存当前汇率设置'); }
-function resetMtRates(){ MT_CURRENCIES.forEach(function(c){ mtRates[c.code]=c.def; }); renderMtRateGrid(); loadMtAccounts(); calcMulti(); flashMtNote('已重置为示例汇率'); }
-
-function loadMtAccounts(){
-  try{
-    const a=kvGet('mt_accounts',null);
-    if(a && a.length){ mtAccounts=a; return; }
-  }catch(e){}
-  mtAccounts=[
-    {name:'A股账户',code:'CNY',balance:102000},
-    {name:'港股账户',code:'HKD',balance:200000},
-    {name:'美股账户',code:'USD',balance:10000},
-    {name:'欧元存款',code:'EUR',balance:3000}
-  ];
-}
-function saveMtAccounts(){ kvSet('mt_accounts', mtAccounts); }
-
-function renderMtRateGrid(){
-  const grid=$('mtRateGrid'); if(!grid) return;
-  // 以当前基准货币展示：1 单位外币 = 多少基准货币
-  grid.innerHTML=MT_CURRENCIES.filter(function(c){return c.code!==mtBase;}).map(function(c){
-    const v=toBase(1, c.code, mtBase);
-    const disp=(isFinite(v)&&v>0)?v.toFixed(4):'';
-    return '<div class="mt-rate-row"><span class="mt-rate-code">'+c.code+'</span><span class="mt-rate-name">'+c.name+'</span>'+
-      '<input class="mt-rate-input" type="number" step="0.0001" min="0" value="'+disp+'" oninput="onRateChange(\''+c.code+'\',this.value)" /></div>';
-  }).join('');
-}
-
-// 汇率换算核心：把任意币种金额折算到 target 基准
-function toBase(amount, code, base){
-  if(code===base) return amount;
-  if(base==='CNY'){ return amount * (mtRates[code]||0); }                 // 外币→人民币
-  if(code==='CNY'){ return amount / (mtRates[base]||1); }                 // 人民币→外币基准
-  return amount * (mtRates[code]||0) / (mtRates[base]||1);                // 外币→外币基准
-}
-function fmtCur(v){
-  const a=Math.abs(v);
-  if(a>=1e8) return fmtNum(Math.round(v/1e8*100)/100)+'亿';
-  if(a>=1e4) return fmtNum(Math.round(v/1e4*10)/10)+'万';
-  return fmtNum(Math.round(v*100)/100);
-}
-
-function onRateChange(code,val){
-  const v=parseFloat(val); if(!isFinite(v)||v<0) return;
-  // val 表示「1 code = v 基准货币」，转回人民币锚存储
-  mtRates[code]=(mtBase==='CNY')?v:v*(mtRates[mtBase]||1);
-  kvSet('mt_rates', mtRates);
-  loadMtAccounts(); calcMulti();
-}
-function onBaseChange(){ mtBase=$('mt_base').value; renderMtRateGrid(); renderMtConvert(); $('mtBaseLabel').textContent=mtBase; $('mtBaseLabel2').textContent=mtBase; $('mtBaseDisplay').textContent=mtBase; calcMulti(); }
-
-function renderMtAccounts(){
-  const body=$('mtAcctBody'); if(!body) return;
-  body.innerHTML=mtAccounts.map(function(a,i){
-    const opts=MT_CURRENCIES.map(function(c){return '<option value="'+c.code+'"'+(c.code===a.code?' selected':'')+'>'+c.code+' '+c.name+'</option>';}).join('');
-    return '<tr><td><input value="'+ (a.name||'') +'" oninput="onAcctChange('+i+',\'name\',this.value)" /></td>'+
-      '<td><select onchange="onAcctChange('+i+',\'code\',this.value)">'+opts+'</select></td>'+
-      '<td><input type="number" value="'+ (a.balance!=null?a.balance:'') +'" oninput="onAcctChange('+i+',\'balance\',this.value)" /></td>'+
-      '<td style="text-align:center"><button class="mt-del-btn" onclick="delMtAccount('+i+')" title="删除">✕</button></td></tr>';
-  }).join('');
-}
-function onAcctChange(i,field,val){ mtAccounts[i][field]=(field==='balance')?+val:val; saveMtAccounts(); calcMulti(); }
-function addMtAccount(){ mtAccounts.push({name:'新账户',code:'USD',balance:0}); saveMtAccounts(); renderMtAccounts(); calcMulti(); }
-function delMtAccount(i){ mtAccounts.splice(i,1); saveMtAccounts(); renderMtAccounts(); calcMulti(); }
-
-function calcMulti(){
-  // 聚合各币种原币余额
-  const byCode={};
-  mtAccounts.forEach(function(a){
-    const b=(+a.balance)||0;
-    byCode[a.code]=(byCode[a.code]||0)+b;
-  });
-  // 折算到基准货币
-  let totalBase=0;
-  const conv=[];
-  Object.keys(byCode).forEach(function(code){
-    const baseVal=toBase(byCode[code], code, mtBase);
-    totalBase+=baseVal;
-    conv.push({code:code, name:getCur(code).name, orig:byCode[code], baseVal:baseVal});
-  });
-  conv.sort(function(a,b){return b.baseVal-a.baseVal;});
-
-  // 汇总卡
-  $('mtSummary').style.display='block';
-  $('mtBaseDisplay').textContent=mtBase;
-  $('mtBaseLabel').textContent=mtBase;
-  $('mtBaseLabel2').textContent=mtBase;
-  $('mtTotalVal').textContent=fmtCur(totalBase)+' '+mtBase;
-
-  // 折算表
-  $('mtConvBody').innerHTML=conv.map(function(c){
-    return '<tr><td>'+c.code+' '+c.name+'</td><td>'+fmtCur(c.orig)+' '+c.code+'</td><td>'+fmtCur(c.baseVal)+' '+mtBase+'</td></tr>';
-  }).join('');
-
-  // 免责声明
-  $('mtDisclaimer').style.display='block';
-
-  // P1 资产占比饼图
-  drawMtPie(conv, totalBase);
-
-  // 历史记录
-  saveMtHistory({ base:mtBase, total:Math.round(totalBase), n:mtAccounts.length });
-}
-
-function renderMtConvert(){ /* 便捷占位：基准切换时已调 calcMulti */ }
-
-function flashMtNote(msg){
-  let n=$('mtNote');
-  if(!n){ n=document.createElement('div'); n.id='mtNote'; n.className='mt-note-toast'; document.getElementById('multiPanel').appendChild(n); }
-  n.textContent=msg; n.style.opacity='1';
-  clearTimeout(n._t); n._t=setTimeout(function(){ n.style.opacity='0'; },1600);
-}
-
-/* ---- P1 资产占比甜甜圈图 ---- */
-function drawMtPie(conv, total){
-  const canvas=$('mtPieChart'); if(!canvas) return;
-  const ctx=canvas.getContext('2d');
-  const dpr=window.devicePixelRatio||1;
-  const size=200;
-  canvas.width=size*dpr; canvas.height=size*dpr;
-  ctx.setTransform(dpr,0,0,dpr,0,0);
-  ctx.clearRect(0,0,size,size);
-  const cx=size/2, cy=size/2, R=size/2-6, r=R*0.6;
-
-  if(total<=0){
-    ctx.fillStyle='#eee'; ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#aaa'; ctx.font='13px sans-serif'; ctx.textAlign='center'; ctx.fillText('暂无数据',cx,cy);
-    const lg=$('mtPieLegend'); if(lg) lg.innerHTML='';
-    return;
-  }
-
-  let ang=-Math.PI/2;
-  const legend=[];
-  conv.forEach(function(c){
-    const frac=total>0?c.baseVal/total:0;
-    if(frac<=0) return;
-    const col=MT_COLORS[c.code]||'#bbbbbb';
-    const end=ang+frac*Math.PI*2;
-    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.arc(cx,cy,R,ang,end); ctx.closePath();
-    ctx.fillStyle=col; ctx.fill();
-    ang=end;
-    legend.push({code:c.code, name:c.name, pct:frac*100, col:col});
-  });
-  // 内圆（甜甜圈）
-  ctx.beginPath(); ctx.arc(cx,cy,r,0,Math.PI*2); ctx.fillStyle='#fbfaf6'; ctx.fill();
-  // 中心文字
-  ctx.fillStyle='#2c3e50'; ctx.textAlign='center';
-  ctx.font='12px sans-serif'; ctx.fillText('币种数', cx, cy-4);
-  ctx.font='bold 17px sans-serif'; ctx.fillText(String(legend.length), cx, cy+15);
-
-  const lg=$('mtPieLegend');
-  if(lg) lg.innerHTML=legend.map(function(l){
-    return '<div class="mt-leg-row"><span class="mt-leg-dot" style="background:'+l.col+'"></span>'+
-      '<span class="mt-leg-name">'+l.code+' '+l.name+'</span>'+
-      '<span class="mt-leg-pct">'+l.pct.toFixed(1)+'%</span></div>';
-  }).join('');
-}
-
-/* ---- P0 实时汇率获取（免 key、支持 CORS；多源兜底） ---- */
-async function fetchLiveRates(){
-  const btn=$('mtLiveBtn'); if(!btn) return;
-  const note=$('mtLiveNote');
-  btn.disabled=true;
-  if(note){ note.className='mt-live-note'; note.textContent='正在获取实时汇率…'; }
-
-  const symbols=MT_CURRENCIES.filter(function(c){return c.code!=='CNY';}).map(function(c){return c.code;});
-  // 多个免 key 公共源，任一成功即可（Frankfurter 用 base/symbols，er-api 用 base_code/rates）
-  const endpoints=[
-    {url:'https://api.frankfurter.app/latest?base=CNY&symbols='+symbols.join(','), pick:function(d){ return d && d.rates ? d.rates : null; }, src:function(d){ return 'Frankfurter/ECB · '+(d.date||''); }},
-    {url:'https://open.er-api.com/v6/latest/CNY', pick:function(d){ return d && d.rates ? d.rates : null; }, src:function(d){ return 'ExchangeRate-API · '+(d.time_last_update_utc||''); }}
-  ];
-
-  let lastErr=null;
-  for(let i=0;i<endpoints.length;i++){
-    try{
-      const resp=await fetch(endpoints[i].url);
-      if(!resp.ok) throw new Error('HTTP '+resp.status);
-      const data=await resp.json();
-      const rates=endpoints[i].pick(data);
-      if(!rates) throw new Error('no rates');
-      // 公共源返回「1 CNY = rates[c] 外币」→ 转成本站锚「1 外币 = 多少 CNY」
-      let updated=0;
-      MT_CURRENCIES.forEach(function(c){
-        if(c.code==='CNY') return;
-        const rate=rates[c.code];
-        if(typeof rate==='number' && rate>0){ mtRates[c.code]=1/rate; updated++; }
-      });
-      if(updated===0) throw new Error('empty');
-      kvSet('mt_rates', mtRates);
-      renderMtRateGrid(); loadMtAccounts(); calcMulti();
-      if(note){ note.className='mt-live-note ok'; note.textContent='已更新实时汇率（'+endpoints[i].src(data)+'）'; }
-      btn.disabled=false;
-      return;
-    }catch(e){ lastErr=e; }
-  }
-  // 全部失败：优雅降级
-  if(note){ note.className='mt-live-note err'; note.textContent='获取失败（网络或跨域限制），已保留手动汇率，可手动修改。'; }
-  btn.disabled=false;
-}
-
-/* ---- 历史记录 ---- */
-function loadMtHistory(){ try{ return kvGet('mt_calc_history',[]); }catch(e){ return []; } }
-function saveMtHistory(rec){
-  const h=loadMtHistory();
-  h.unshift(rec);
-  if(h.length>10) h.pop();
-  kvSet('mt_calc_history', h);
-  renderMtHistory(h);
-}
-function renderMtHistory(h){
-  const list=$('mtHistList'); if(!list) return;
-  if(!h||h.length===0){ list.innerHTML='<div class="tb-hist-empty">暂无计算记录</div>'; return; }
-  list.innerHTML=h.map(function(i){
-    return '<div class="tb-hist-item"><div><div class="tb-hist-main">'+i.n+' 个账户 · 基准 '+i.base+'</div><div class="tb-hist-sub">总资产 '+fmtNum(i.total)+' '+i.base+'</div></div><div class="tb-hist-val">已折算</div></div>';
-  }).join('');
-}
-function clearMtHistory(){ try{ kvSet('mt_calc_history',[]); }catch(e){} renderMtHistory([]); }
-
-function initMulti(){
-  loadMtRates();
-  loadMtAccounts();
-  $('mt_base').value=mtBase;
-  $('mtBaseLabel').textContent=mtBase;
-  $('mtBaseLabel2').textContent=mtBase;
-  $('mtBaseDisplay').textContent=mtBase;
-  renderMtRateGrid();
-  renderMtAccounts();
-  renderMtHistory(loadMtHistory());
-  calcMulti();
-}
-/* ============ 信用卡分期真实年化 ============ */
-// IRR 月利率求解：期初 +A，之后每月支出 pays[k]
-function crIrr(A, pays){
-  // 二分法求月IRR：NPV(r)=A - Σ pays[k]/(1+r)^(k+1)
-  // r=0 时 NPV = A - Σpays < 0（总还款>本金），r 增大 NPV 增大 → NPV(lo)<0, NPV(hi)>0
-  let lo=0, hi=3; // 月利率 0~300%
-  for(let it=0; it<80; it++){
-    const mid=(lo+hi)/2;
-    let npv=A;
-    for(let k=0;k<pays.length;k++) npv -= pays[k]/Math.pow(1+mid, k+1);
-    if(npv>0) hi=mid; else lo=mid;  // NPV>0 → r太大，收hi；NPV<0 → r太小，放lo
-  }
-  return lo;  // 收敛后 lo 偏低侧、hi 偏高侧，取 lo 近似
-}
-function calcCredit(){
-  const A=+$('cr_a').value, n=+$('cr_n').value, feeRate=(+$('cr_f').value)/100;
-  const mode=$('cr_mode').value;
-  if(!(A>0)||!(n>0)||feeRate<0){ alert('请输入有效的分期参数'); return; }
-
-  const prin=A/n;
-  const totalFee=A*feeRate*n;
-  // 每期还款现金流
-  const pays=[];
-  let bal=A;
-  const prinArr=[], feeArr=[], balArr=[], pmtArr=[];
-  for(let k=1;k<=n;k++){
-    const fee = mode==='once' ? (k===1?totalFee:0) : A*feeRate;
-    const pmt = prin + fee;
-    bal = Math.max(0, bal - prin);
-    pays.push(pmt); pmtArr.push(pmt); prinArr.push(prin); feeArr.push(fee); balArr.push(bal);
-  }
-  const rM=crIrr(A, pays);
-  const apr=(Math.pow(1+rM,12)-1)*100;
-  const nominal=feeRate*12*100; // 表面年化 = 月费率×12
-  const mult = nominal>0 ? apr/nominal : 0;
-
-  // 结果卡
-  $('crResults').style.display='grid';
-  if(mode==='once'){
-    $('cr_pmt').textContent='首期 '+fmt(pmtArr[0])+' · 其后 '+fmt(prin);
-  } else {
-    $('cr_pmt').textContent=fmt(pmtArr[0]);
-  }
-  $('cr_fee').textContent=fmt(totalFee);
-  $('cr_nom').textContent=nominal.toFixed(2)+'%';
-  $('cr_apr').textContent=apr.toFixed(2)+'%';
-
-  // 对比指标
-  $('crCompare').style.display='block';
-  $('cr_mult').textContent=mult.toFixed(2)+' ×';
-  $('cr_extra').textContent=fmt(totalFee);
-  $('cr_vs_tb').textContent=(apr/4).toFixed(1)+' ×';
-  $('cr_vs_dep').textContent=(apr/2).toFixed(1)+' ×';
-
-  // 拆解表
-  renderCrTable(prinArr, feeArr, pmtArr, balArr);
-
-  // 图表
-  drawCrChart(pmtArr, prinArr, feeArr);
-
-  // 芒格结论
-  generateCrMungerVerdict(apr, nominal, mult);
-
-  // 免责声明
-  $('crDisclaimer').style.display='block';
-
-  // 历史记录
-  saveCrHistory({ a:Math.round(A), n:n, f:+$('cr_f').value, mode:mode, apr:Math.round(apr*100)/100 });
-}
-function renderCrTable(prinArr, feeArr, pmtArr, balArr){
-  const wrap=$('crTableWrap'), body=$('crTableBody');
-  if(!wrap||!body) return;
-  wrap.style.display='block';
-  let html='';
-  const show=Math.min(12, prinArr.length);
-  for(let k=0;k<show;k++){
-    html+='<tr><td>'+(k+1)+'</td><td class="prin">'+fmt(prinArr[k])+'</td><td class="fee">'+fmt(feeArr[k])+'</td><td>'+fmt(pmtArr[k])+'</td><td>'+fmt(balArr[k])+'</td></tr>';
-  }
-  if(prinArr.length>12){
-    html+='<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:10px">... 共 '+prinArr.length+' 期，仅显示前 12 期</td></tr>';
-  }
-  body.innerHTML=html;
-}
-function resetCredit(){
-  $('cr_a').value=12000; $('cr_n').value=12; $('cr_f').value=0.6; $('cr_mode').value='each';
-  $('crResults').style.display='none'; $('crCompare').style.display='none';
-  $('crTableWrap').style.display='none'; $('crChartCard').style.display='none';
-  $('crMunger').style.display='none'; $('crDisclaimer').style.display='none';
-}
-function drawCrChart(pmtArr, prinArr, feeArr){
-  const card=$('crChartCard'); if(!card) return;
-  card.style.display='block';
-  const canvas=$('crChart'); if(!canvas) return;
-  const ctx=canvas.getContext('2d');
-  const dpr=window.devicePixelRatio||1;
-  const W=canvas.parentElement.clientWidth, H=320;
-  canvas.width=W*dpr; canvas.height=H*dpr; ctx.scale(dpr,dpr);
-  canvas.style.width=W+'px'; canvas.style.height=H+'px';
-
-  const padT=28, padR=20, padB=46, padL=64;
-  const cW=W-padL-padR, cH=H-padT-padB;
-  const maxVal=Math.max.apply(null, pmtArr)*1.12;
-  const maxN=pmtArr.length;
-
-  ctx.fillStyle='#fff'; ctx.fillRect(0,0,W,H);
-  // 网格 + Y 轴
-  ctx.strokeStyle='#eee'; ctx.lineWidth=.7; ctx.font='11px -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif'; ctx.fillStyle='#aaa';
-  for(let i=0;i<=4;i++){
-    const v=maxVal/4*i, y=padT+cH*(1-v/maxVal);
-    ctx.beginPath(); ctx.moveTo(padL,y); ctx.lineTo(W-padR,y); ctx.stroke();
-    ctx.textAlign='right'; ctx.fillText('¥'+fmtShort(v), padL-8, y+4);
-  }
-  // X 轴刻度
-  ctx.textAlign='center'; ctx.fillStyle='#999';
-  const xStep=Math.max(1, Math.floor(maxN/10));
-  for(let i=0;i<maxN;i+=xStep){
-    const x=padL+(i/(maxN-1))*cW;
-    ctx.fillText((i+1)+'期', x, H-padB+18);
-  }
-  // 堆叠柱：本金(蓝) + 手续费(红)
-  const bw=Math.min(40, cW/maxN*0.7);
-  for(let i=0;i<maxN;i++){
-    const x=padL+(i/(maxN-1))*cW - bw/2;
-    const prinH=prinArr[i]/maxVal*cH, feeH=feeArr[i]/maxVal*cH;
-    const baseY=padT+cH;
-    // 本金
-    ctx.fillStyle='#4A6A8C';
-    ctx.fillRect(x, baseY-prinH, bw, prinH);
-    // 手续费
-    ctx.fillStyle='#B0473C';
-    ctx.fillRect(x, baseY-prinH-feeH, bw, feeH);
-  }
-  // 图例
-  let lx=padL, ly=H-padB+38;
-  function dot(x,y,c,label){
-    ctx.fillStyle=c; ctx.beginPath(); ctx.arc(x,y,5,0,Math.PI*2); ctx.fill();
-    ctx.fillStyle='#555'; ctx.textAlign='left'; ctx.fillText(label, x+10, y+4);
-  }
-  dot(lx,ly,'#4A6A8C','本金'); lx+=80;
-  dot(lx,ly,'#B0473C','手续费');
-}
-function generateCrMungerVerdict(apr, nominal, mult){
-  const box=$('crMunger'); if(!box) return;
-  box.style.display='block';
-  let v;
-  if(apr>=18){
-    v='真实年化 <b>'+apr.toFixed(1)+'%</b>，已经超过 18%。巴菲特说「永远不要亏钱」——这种确定性的高成本负债就是反向复利，能不碰就不碰。';
-  } else if(apr>=12){
-    v='真实年化 <b>'+apr.toFixed(1)+'%</b>，是表面费率（'+nominal.toFixed(1)+'%）的 <b>'+mult.toFixed(1)+' 倍</b>。芒格：如果知道会亏在哪里，就别去那里。分期前先问自己，这笔消费非现在不可吗？';
-  } else if(apr>=7){
-    v='真实年化 <b>'+apr.toFixed(1)+'%</b>，看着不高，但已显著高于无风险收益（美债约 4%、存款约 2%）。芒格：别忘了机会成本。';
-  } else {
-    v='真实年化 <b>'+apr.toFixed(1)+'%</b>，在分期里算温和，但仍高于无风险利率。能一次性付清就别分期，免费的钱最贵。';
-  }
-  v+=' 记住：分期手续费不是「服务费」，而是你为提前消费付出的利息。';
-  box.innerHTML='<div class="cr-munger-head">💡 芒格视角</div><div class="cr-munger-text">'+v+'</div>';
-}
-function loadCrHistory(){ try{ return kvGet('cr_calc_history',[]); }catch(e){ return []; } }
-function saveCrHistory(rec){
-  const h=loadCrHistory(); h.unshift(rec); if(h.length>10) h.pop();
-  kvSet('cr_calc_history', h); renderCrHistory(h);
-}
-function renderCrHistory(h){
-  const list=$('crHistList'); if(!list) return;
-  if(!h||h.length===0){ list.innerHTML='<div class="cr-hist-empty">暂无计算记录</div>'; return; }
-  list.innerHTML=h.map(function(i){
-    const modeTxt=i.mode==='once'?'一次性':'每期';
-    return '<div class="cr-hist-item"><span class="cr-hist-info">¥'+fmtNum(i.a)+' / '+i.n+'期 / '+i.f+'%('+modeTxt+')</span><span class="cr-hist-val">真实 '+i.apr+'%</span></div>';
-  }).join('');
-}
-function clearCrHistory(){ try{ kvSet('cr_calc_history',[]); }catch(e){} renderCrHistory([]); }
-
-/* ============ ③ 价值筛选器（电商式） ============ */
-const MARKETS=['全部','A股','美股','港股','指数','ETF'];
-const COND_DEFS=[
-  {id:'roe', name:'ROE ≥', desc:'长期高净资产收益率', type:'range', min:5, max:40, step:1, def:15,
-   explain:'净资产收益率（ROE）= 净利润 ÷ 股东权益，衡量公司用股东的钱赚钱的效率，是巴菲特最看重的指标之一。长期稳定在 15% 以上的公司，通常意味着生意模式好、有真护城河。<b>注意：</b>银行、保险等高杠杆行业的 ROE 天然偏高，要结合负债率一起看才客观。'},
-  {id:'debt',name:'负债率 ≤', desc:'财务稳健抗周期', type:'range', min:10, max:80, step:5, def:50,
-   explain:'资产负债率 = 总负债 ÷ 总资产，代表公司资产里有多少是靠借来的。巴菲特的原则是：好公司负债低、现金流稳，危机来了才活得下去。<b>经验值：</b>50% 以内算稳健；银行、保险、地产等天然高杠杆行业除外——它们要看资产质量而非这个数字。'},
-  {id:'gm',  name:'毛利率 ≥', desc:'定价权=护城河信号（可关）', type:'range', min:10, max:80, step:5, def:40, allowOff:true,
-   explain:'毛利率 =（营业收入 − 营业成本）÷ 营业收入，反映产品的定价权。能长期维持高毛利的公司，通常握有品牌、专利或成本优势等护城河。<b>注意：</b>不同行业差异巨大——白酒 90% 是常态，零售 20% 也算优秀，要跟同行比才有意义。'},
-  {id:'fcf', name:'自由现金流为正', desc:'真金白银，不是纸面利润', type:'bool', def:true,
-   explain:'自由现金流 = 经营现金流 − 资本开支，是公司真正落进口袋的真金白银，而非账面上的“纸面利润”。巴菲特坚持“利润是观点，现金是事实”——只有持续产生自由现金流的公司，才有底气分红、回购、穿越周期。'},
-  {id:'pe',  name:'PE ≤', desc:'价格不贵=安全边际', type:'range', min:10, max:60, step:1, def:25,
-   explain:'市盈率（PE）= 股价 ÷ 每股收益，代表你为每 1 元利润支付的价格，越低说明买得越便宜、安全边际越厚。巴菲特买好公司也讲究“好价格”：再好的生意，用太贵的价格买入也会变成平庸的投资。<b>注意：</b>PE 要跟行业和历史比，亏损或强周期公司慎用。'},
-  {id:'moat',name:'具备清晰护城河', desc:'品牌/成本/网络/转换成本', type:'bool', def:true,
-   explain:'护城河是公司长期抵御竞争的结构性优势，巴菲特认为它比短期利润更重要。常见四类：① 品牌（可口可乐）② 成本（格力）③ 网络效应（腾讯）④ 转换成本（微软）。有护城河 = 生意能一直赚钱，竞争者抢不走。'},
-  {id:'div', name:'连续分红/回购', desc:'对股东友好', type:'bool', def:true,
-   explain:'公司把利润以现金分红或回购股份的方式回馈股东。巴菲特偏爱“现金奶牛”——持续分红说明利润真实、管理层对股东友好；回购则减少股本、增厚每股价值。<b>注意：</b>高速成长期的公司不分红也合理，关键是利润是否在创造更大价值。'},
-];
-// 扩展股票库：覆盖A股/港股/美股/指数/ETF各行业龙头约80只
-// py=拼音首字母；al=别名数组（支持模糊搜索）
-const stocks=[
-  // ============ A股（约35只）============
-  {code:'600519',name:'贵州茅台',al:['茅台',' Moutai'],py:'gzmt',market:'A股',roe:33,debt:12,gm:91,fcf:true,pe:20,div:true,dy:2.1,moat:'品牌+特许经营',moatBrief:'品牌溢价极高、定价权强，存货越放越值钱',val:'合理',bt:{buy:150,cur:1450,div:210,yrs:10}},
-  {code:'000858',name:'五粮液',al:['五粮'],py:'wly',market:'A股',roe:23,debt:34,gm:78,fcf:true,pe:24,div:true,dy:3.4,moat:'品牌',moatBrief:'浓香龙头品牌心智强，量价齐升',val:'低估',bt:{buy:60,cur:145,div:35,yrs:10}},
-  {code:'000568',name:'泸州老窖',al:['老窖'],py:'lzlj',market:'A股',roe:23,debt:22,gm:87,fcf:true,pe:13,div:true,dy:4.9,moat:'品牌',moatBrief:'高端白酒第三品牌，渠道管控强',val:'低估',bt:{buy:50,cur:160,div:30,yrs:10}},
-  {code:'000333',name:'美的集团',al:['美的'],py:'mdjt',market:'A股',roe:20,debt:60,gm:26,fcf:true,pe:15,div:true,dy:5.1,moat:'品牌+成本',moatBrief:'家电双寡头，规模成本优势+渠道网络',val:'低估',bt:{buy:28,cur:72,div:22,yrs:10}},
-  {code:'000651',name:'格力电器',al:['格力'],py:'gldq',market:'A股',roe:20,debt:59,gm:30,fcf:true,pe:8,div:true,dy:5.0,moat:'品牌+成本',moatBrief:'空调全球龙头，渠道护城河',val:'低估',bt:{buy:30,cur:45,div:25,yrs:10}},
-  {code:'600690',name:'海尔智家',al:['海尔'],py:'hezj',market:'A股',roe:17,debt:55,gm:27,fcf:true,pe:11,div:true,dy:5.1,moat:'品牌+渠道',moatBrief:'白电三强，全球化卡萨帝高端',val:'低估',bt:{buy:15,cur:28,div:8,yrs:10}},
-  {code:'600036',name:'招商银行',al:['招行',' CMB'],py:'zsyh',market:'A股',roe:13,debt:90,gm:null,fcf:true,pe:7,div:true,dy:5.1,moat:'品牌+网络',moatBrief:'零售银行护城河，客户黏性强、成本低',val:'低估',bt:{buy:18,cur:34,div:13,yrs:10},bank:true},
-  {code:'601398',name:'工商银行',al:['工行',' ICBC'],py:'gsyh',market:'A股',roe:9,debt:92,gm:null,fcf:true,pe:7,div:true,dy:4.1,moat:'品牌+网络',moatBrief:'宇宙行，规模壁垒+息差稳定',val:'低估',bt:{buy:4.5,cur:7,div:3.5,yrs:10},bank:true},
-  {code:'601939',name:'建设银行',al:['建行',' CCB'],py:'jsyh',market:'A股',roe:10,debt:92,gm:null,fcf:true,pe:8,div:true,dy:3.8,moat:'品牌+网络',moatBrief:'基建贷款龙头，资产质量稳健',val:'低估',bt:{buy:5,cur:8,div:4,yrs:10},bank:true},
-  {code:'601288',name:'农业银行',al:['农行',' ABC'],py:'nyyh',market:'A股',roe:10,debt:94,gm:null,fcf:true,pe:8,div:true,dy:3.8,moat:'品牌+网络',moatBrief:'县域网点最深，三农政策受益',val:'低估',bt:{buy:3.2,cur:5.5,div:2.5,yrs:10},bank:true},
-  {code:'601318',name:'中国平安',al:['平安',' Ping An'],py:'zapa',market:'A股',roe:14,debt:90,gm:null,fcf:true,pe:7,div:true,dy:5.0,moat:'品牌+渠道',moatBrief:'综合金融，寿险+产险+银行混业',val:'低估',bt:{buy:50,cur:55,div:25,yrs:10},bank:true},
-  {code:'600900',name:'长江电力',al:['长电'],py:'zjdl',market:'A股',roe:16,debt:57,gm:62,fcf:true,pe:19,div:true,dy:2.8,moat:'特许经营',moatBrief:'水电特许经营权，现金流如债券',val:'合理',bt:{buy:12,cur:27,div:11,yrs:10}},
-  {code:'601088',name:'中国神华',al:['神华'],py:'zgsh',market:'A股',roe:13,debt:29,gm:35,fcf:true,pe:18,div:true,dy:4.7,moat:'资源+成本',moatBrief:'煤电运一体化，高股息现金奶牛',val:'低估',bt:{buy:18,cur:42,div:18,yrs:10}},
-  {code:'601899',name:'紫金矿业',al:['紫金'],py:'zjky',market:'A股',roe:26,debt:51,gm:28,fcf:true,pe:14,div:true,dy:1.9,moat:'资源',moatBrief:'全球铜金矿龙头，量价齐升',val:'合理',bt:{buy:3,cur:18,div:3,yrs:10}},
-  {code:'600276',name:'恒瑞医药',al:['恒瑞'],py:'hryy',market:'A股',roe:14,debt:10,gm:86,fcf:true,pe:44,div:true,dy:0.4,moat:'研发+品牌',moatBrief:'创新药管线深厚，仿转创龙头',val:'高估',bt:{buy:18,cur:46,div:5,yrs:10}},
-  {code:'000538',name:'云南白药',al:['白药'],py:'ynby',market:'A股',roe:13,debt:25,gm:30,fcf:true,pe:18,div:true,dy:3.1,moat:'品牌+特许',moatBrief:'中药保密配方+消费品双轮驱动',val:'合理',bt:{buy:80,cur:60,div:30,yrs:10}},
-  {code:'600436',name:'片仔癀',al:['片仔'],py:'pzh',market:'A股',roe:15,debt:14,gm:36,fcf:true,pe:44,div:true,dy:2.1,moat:'品牌+特许',moatBrief:'中药保密品种，定价权强稀缺品',val:'高估',bt:{buy:40,cur:240,div:20,yrs:10}},
-  {code:'300760',name:'迈瑞医疗',al:['迈瑞'],py:'mryl',market:'A股',roe:22,debt:25,gm:60,fcf:true,pe:24,div:true,dy:1.0,moat:'研发+品牌',moatBrief:'国产医疗器械龙头，全球化加速',val:'合理',bt:{buy:50,cur:280,div:25,yrs:10}},
-  {code:'300750',name:'宁德时代',al:['宁德',' CATL'],py:'ndsd',market:'A股',roe:12,debt:64,gm:24,fcf:true,pe:22,div:true,dy:0.7,moat:'技术+成本',moatBrief:'全球动力电池龙头，规模+技术双壁垒',val:'合理',bt:{buy:30,cur:240,div:5,yrs:10}},
-  {code:'002594',name:'比亚迪',al:['BYD'],py:'byd',market:'A股',roe:15,debt:71,gm:18,fcf:true,pe:30,div:true,dy:0.4,moat:'成本+技术',moatBrief:'垂直整合成本优势+刀片电池技术',val:'合理',bt:{buy:25,cur:98,div:3,yrs:10}},
-  {code:'002415',name:'海康威视',al:['海康'],py:'hkws',market:'A股',roe:9,debt:32,gm:50,fcf:true,pe:22,div:true,dy:2.9,moat:'技术+渠道',moatBrief:'全球安防龙头，AIoT转型',val:'合理',bt:{buy:15,cur:35,div:6,yrs:10}},
-  {code:'002230',name:'科大讯飞',al:['讯飞',' iFlytek'],py:'kdxf',market:'A股',roe:5,debt:56,gm:42,fcf:true,pe:120,div:true,dy:0.2,moat:'技术',moatBrief:'国内语音AI龙头，星火大模型',val:'高估',bt:{buy:20,cur:50,div:2,yrs:10}},
-  {code:'300059',name:'东方财富',al:['东财'],py:'dfcf',market:'A股',roe:14,debt:78,gm:70,fcf:true,pe:24,div:true,dy:0.5,moat:'网络+成本',moatBrief:'互联网券商，天天基金流量入口',val:'高估',bt:{buy:8,cur:25,div:2,yrs:10}},
-  {code:'688981',name:'中芯国际',al:['中芯',' SMIC'],py:'zxgj',market:'A股',roe:3,debt:35,gm:22,fcf:true,pe:200,div:false,dy:0,moat:'技术',moatBrief:'国内晶圆代工龙头，先进制程追赶',val:'高估',bt:{buy:30,cur:90,div:0,yrs:10}},
-  {code:'600887',name:'伊利股份',al:['伊利',' Yili'],py:'ylgf',market:'A股',roe:21,debt:60,gm:35,fcf:true,pe:14,div:true,dy:3.4,moat:'品牌+渠道',moatBrief:'乳制品双寡头之一，渠道下沉深',val:'合理',bt:{buy:25,cur:30,div:10,yrs:10}},
-  {code:'603288',name:'海天味业',al:['海天'],py:'htwy',market:'A股',roe:20,debt:12,gm:40,fcf:true,pe:30,div:true,dy:2.8,moat:'品牌+渠道',moatBrief:'调味品龙头，餐饮渠道壁垒',val:'高估',bt:{buy:50,cur:50,div:12,yrs:10}},
-  {code:'600585',name:'海螺水泥',al:['海螺'],py:'hlsn',market:'A股',roe:4,debt:19,gm:24,fcf:true,pe:12,div:true,dy:4.7,moat:'成本',moatBrief:'水泥龙头，T型战略成本优势',val:'合理',bt:{buy:30,cur:25,div:14,yrs:10}},
-  {code:'600048',name:'保利发展',al:['保利'],py:'blfz',market:'A股',roe:1,debt:72,gm:13,fcf:false,pe:244,div:true,dy:0.7,moat:'品牌',moatBrief:'央企地产龙头，利润大幅下滑',val:'合理',bt:{buy:12,cur:9,div:4,yrs:10}},
-  {code:'600030',name:'中信证券',al:['中信'],py:'zxzq',market:'A股',roe:11,debt:85,gm:null,fcf:true,pe:12,div:true,dy:2.5,moat:'品牌',moatBrief:'券商龙头，机构业务领先',val:'低估',bt:{buy:18,cur:25,div:5,yrs:10}},
-  {code:'000516',name:'国际医学',al:['国医'],py:'gjyx',market:'A股',roe:-9,debt:69,gm:8,fcf:false,pe:120,div:false,dy:0,moat:'弱',moatBrief:'民营三甲医院，持续亏损',val:'高估',bt:{buy:5,cur:8,div:0,yrs:10}},
-  // ============ 港股（约10只）============
-  {code:'00700',name:'腾讯控股',al:['腾讯',' Tencent',' 鹅厂'],py:'txkg',market:'港股',roe:21,debt:30,gm:46,fcf:true,pe:15,div:true,dy:1.1,moat:'网络效应',moatBrief:'社交+游戏网络效应，护城河极宽',val:'低估',bt:{buy:130,cur:380,div:45,yrs:10}},
-  {code:'09988',name:'阿里巴巴-W',al:['阿里',' Alibaba',' 9988'],py:'alibaba',market:'港股',roe:12,debt:25,gm:35,fcf:true,pe:14,div:true,dy:1.5,moat:'网络效应',moatBrief:'电商+云计算双引擎',val:'低估',bt:{buy:120,cur:110,div:8,yrs:10}},
-  {code:'03690',name:'美团-W',al:['美团',' Meituan',' 3690'],py:'meituan',market:'港股',roe:8,debt:35,gm:25,fcf:true,pe:25,div:false,dy:0,moat:'网络效应',moatBrief:'本地生活龙头，外卖+酒旅+闪购',val:'合理',bt:{buy:60,cur:120,div:0,yrs:10}},
-  {code:'01810',name:'小米集团-W',al:['小米',' Xiaomi',' 1810'],py:'xiaomi',market:'港股',roe:15,debt:25,gm:18,fcf:true,pe:35,div:true,dy:0.5,moat:'品牌+生态',moatBrief:'手机×AIoT×汽车，生态链闭环',val:'高估',bt:{buy:8,cur:55,div:1,yrs:10}},
-  {code:'00941',name:'中国移动',al:['中移动',' 941'],py:'zhyd',market:'港股',roe:10,debt:32,gm:31,fcf:true,pe:13,div:true,dy:6.5,moat:'特许经营+网络',moatBrief:'运营商特许经营，现金流稳定分红高',val:'低估',bt:{buy:70,cur:78,div:38,yrs:10}},
+    '<div class="ld-card"><div class="ld-lbl">加权年利率</div><div class="ld-val">' + w
+... 55844 bytes omitted ...
+网络',moatBrief:'运营商特许经营，现金流稳定分红高',val:'低估',bt:{buy:70,cur:78,div:38,yrs:10}},
   {code:'01299',name:'友邦保险',al:['友邦',' AIA'],py:'ybbx',market:'港股',roe:14,debt:35,gm:null,fcf:true,pe:20,div:true,dy:1.8,moat:'品牌+渠道',moatBrief:'亚洲寿险龙头，代理渠道+品牌信任',val:'合理',bt:{buy:58,cur:62,div:14,yrs:10}},
   {code:'09618',name:'京东集团-SW',al:['京东',' JD',' 9618'],py:'jd',market:'港股',roe:18,debt:35,gm:14,fcf:true,pe:10,div:true,dy:3.0,moat:'网络+成本',moatBrief:'自营电商+物流双壁垒',val:'低估',bt:{buy:160,cur:140,div:25,yrs:10}},
   {code:'00388',name:'香港交易所',al:['港交所',' HKEX'],py:'xgjys',market:'港股',roe:25,debt:5,gm:null,fcf:true,pe:35,div:true,dy:2.5,moat:'特许经营',moatBrief:'独家交易所垄断',val:'合理',bt:{buy:200,cur:380,div:50,yrs:10}},
@@ -9285,7 +8328,7 @@ function renderConsistency(s){
   var fin=scrFin[s.code];
   var badges=[];
   // 1. ROE稳定性：静态ROE>=15%视为"长期优秀"
-  var roeV=fin&&fin.roe!==null?fin.roe:s.roe;
+  var roeV=scrMetric(s,'roe');
   if(roeV!==null&&roeV>=15){
     badges.push({cls:'good',txt:'ROE持续≥15%'});
   }else if(roeV!==null&&roeV>=10){
@@ -9348,7 +8391,7 @@ var BOND_YIELD_CN=1.7; // 中国10年期国债收益率(%)，静态值，可手�
 var BOND_YIELD_US=4.3;  // 美国10年期国债收益率(%)
 function renderBondCmp(s){
   var fin=scrFin[s.code];
-  var dyV=fin&&fin.dy!==null?fin.dy:s.dy;
+  var dyV=scrMetric(s,'dy');
   if(!dyV||dyV<=0) return '';
   var bondRate=(s.market==='美股')?BOND_YIELD_US:BOND_YIELD_CN;
   var win=dyV>=bondRate;
@@ -9401,7 +8444,7 @@ function getValLabel(s){
 }
 function getBondCmpData(s){
   var fin=scrFin[s.code];
-  var dyV=fin&&fin.dy!==null?fin.dy:s.dy;
+  var dyV=scrMetric(s,'dy');
   if(!dyV||dyV<=0) return null;
   var bondRate=(s.market==='美股')?BOND_YIELD_US:BOND_YIELD_CN;
   return {dy:dyV, bondRate:bondRate, win:dyV>=bondRate, spread:dyV-bondRate};
@@ -9419,7 +8462,7 @@ function calcSignalScore(s){
   }
   if(s.moat&&s.moat!=='弱') score+=15;
   var fin=scrFin[s.code];
-  var roeV=fin&&fin.roe!==null?fin.roe:s.roe;
+  var roeV=scrMetric(s,'roe');
   if(roeV&&roeV>=15) score+=5;
   return Math.max(0,Math.min(100,score));
 }
@@ -9479,7 +8522,7 @@ function renderSignal(s){
   if(s.moat&&s.moat!=='弱'){ score+=15; factors.push('有护城河'); }
   // 高ROE加成
   var fin=scrFin[s.code];
-  var roeV=fin&&fin.roe!==null?fin.roe:s.roe;
+  var roeV=scrMetric(s,'roe');
   if(roeV&&roeV>=15){ score+=5; factors.push('ROE '+roeV.toFixed(0)+'%'); }
 
   score=Math.max(0,Math.min(100,score));
@@ -9533,7 +8576,7 @@ function updateScanBanner(){
     }
     if(s.moat&&s.moat!=='弱') score+=15;
     var fin=scrFin[s.code];
-    var roeV=fin&&fin.roe!==null?fin.roe:s.roe;
+    var roeV=scrMetric(s,'roe');
     if(roeV&&roeV>=15) score+=5;
     score=Math.max(0,Math.min(100,score));
     if(score>=60){ buyCount++; if(buyNames.length<5) buyNames.push(s.name); }
@@ -9641,7 +8684,7 @@ function renderStocks(){
   const showAll=scrQuery.length>0; // 搜索时显示所有命中，标注未通过项
   const passed=list.filter(scrTest);
   const container=$('scrStockList');
-  $('scrCount').innerHTML='共 <b style="color:var(--green)">'+passed.length+'</b> 只符合巴氏标准 <span class="scr-count-badge">'+passed.length+'/'+list.length+'</span>';
+  $('scrCount').innerHTML='共 <b style="color:var(--green)">'+passed.length+'</b> 只满足已启用条件 <span class="scr-count-badge">'+passed.length+'/'+list.length+'</span>';
   var sortLabels={val:'估值',roe:'ROE',pe:'PE',dy:'股息率',signal:'信号分'};
   $('scrSortLbl').textContent=sortLabels[scrSort]||'估值';
   if(!list.length){
@@ -9657,7 +8700,7 @@ function renderStocks(){
     const isFav=favs.indexOf(s.code)>=0;
     const valLabel=getValLabel(s);
     const valCls=valLabel==='低估'?'low':(valLabel==='合理'?'fair':'high');
-    const valTxt=valLabel==='低估'?'🟢 低估':(valLabel==='合理'?'🟡 合理':'🔴 估值偏高');
+    const valTxt=valLabel==='待核验'?'待核验':(valLabel==='低估'?'🟢 低估':(valLabel==='合理'?'🟡 合理':'🔴 估值偏高'));
     // 计算该标的有几项未通过（用于搜索模式标注）
     const condsOn=COND_DEFS.filter(function(cd){return scrConds[cd.id].on;});
     const failed=condsOn.filter(function(cd){return !condTest(s,cd);}).map(function(cd){return cd.name+(cd.type==='range'?scrConds[cd.id].val:'');});
@@ -9665,18 +8708,13 @@ function renderStocks(){
     // 优先使用实时财务数据(scrFin)，否则回退到静态值
     const fin=scrFin[s.code];
     const q=scrQuotes[s.code];
-    const roeV=fin&&fin.roe!==null?fin.roe:s.roe;
-    const gmV=fin&&fin.gm!==null?fin.gm:s.gm;
-    const debtV=fin&&fin.debt!==null?fin.debt:s.debt;
-    const dyV=fin&&fin.dy!==null?fin.dy:s.dy;
-    const peV=(q&&q.pe)?q.pe:(fin&&fin.pe?fin.pe:s.pe); // PE 优先用实时行情
-    // finTag：real=全实时(A股)，partial=部分实时(港股/美股的PE/PB/股息率来自行情)
-    let finTag='';
-    if(fin&&fin.source==='real'){
-      finTag='<span class="scr-fin-tag" title="数据来源：东方财富最新年报">📊 实时</span>';
-    }else if(fin&&fin.source==='partial'){
-      finTag='<span class="scr-fin-tag" title="PE/PB/股息率来自实时行情，ROE/毛利率为静态值" style="color:var(--gold);background:#fdf6e3;border-color:#e8d59a">📊 部分实时</span>';
-    }
+    const roeV=scrMetric(s,'roe');
+    const gmV=scrMetric(s,'gm');
+    const debtV=scrMetric(s,'debt');
+    const dyV=scrMetric(s,'dy');
+    const peV=livePeVerified(s); // PE 优先用实时行情
+    let finTag='<span class="scr-fin-tag">财务数据待核验</span>';
+    if(fin&&fin.source==='real') finTag='<span class="scr-fin-tag">东方财富 · ROE/毛利率年报 '+(fin.reportDate||'缺失')+' · 负债率 '+(fin.balanceDate||'缺失')+' · 股息率：'+(fin.dividendVerified?'已实施除息TTM，截至'+fin.dividendDate:'缺失')+'</span>';
     const metr=[
       {k:'ROE',v:roeV===null?'—':roeV.toFixed(1)+'%',cls:(roeV!==null&&roeV>=15)?'ok':'bad'},
       {k:'负债率',v:debtV===null?'—':debtV.toFixed(0)+'%',cls:(s.bank?debtV<=60:debtV<=50)?'ok':'bad'},
@@ -9736,12 +8774,12 @@ function condTest(s,cd){
   const c=scrConds[cd.id];
   // 优先使用实时财务数据
   const fin=scrFin[s.code];
-  const roeV=fin&&fin.roe!==null?fin.roe:s.roe;
-  const gmV=fin&&fin.gm!==null?fin.gm:s.gm;
-  const debtV=fin&&fin.debt!==null?fin.debt:s.debt;
-  const dyV=fin&&fin.dy!==null?fin.dy:s.dy;
+  const roeV=scrMetric(s,'roe');
+  const gmV=scrMetric(s,'gm');
+  const debtV=scrMetric(s,'debt');
+  const dyV=scrMetric(s,'dy');
   const q=scrQuotes[s.code];
-  const peV=(q&&q.pe)?q.pe:(fin&&fin.pe?fin.pe:s.pe); // PE 优先用实时行情
+  const peV=livePeVerified(s); // PE 优先用实时行情
   switch(cd.id){
     case 'roe': return roeV===null||roeV===undefined||roeV>=c.val;
     case 'debt': return debtV!==null&&debtV!==undefined&&debtV<=(s.bank?Math.min(80,c.val+20):c.val);
@@ -18831,6 +17869,116 @@ function initLuckyCat(){
   c.style.display=(!isNaN(hiddenAt)&&Date.now()-hiddenAt<600000)?'none':'';
 }
 
+
+
+
+
+/* DATA_INTEGRITY_START */
+/* Verified financial data only. Missing evidence must remain unknown. */
+'use strict';
+function finiteMetric(v){ return typeof v==='number'&&Number.isFinite(v)?v:null; }
+function isFund(s){ return s.market==='ETF'||s.market==='指数'||['VOO','SPY','VTI','QQQ','TLT','BND'].includes(s.code); }
+function scrMetric(s,key){
+  var f=scrFin[s.code];
+  if(isFund(s)&&['roe','gm','debt'].includes(key)) return null;
+  if(!f||f.source!=='real') return null;
+  if(key==='dy'){
+    var price=finiteMetric(scrQuotes[s.code]&&scrQuotes[s.code].price);
+    return f.dividendVerified&&price>0?f.dps/price*100:null;
+  }
+  return finiteMetric(f[key]);
+}
+function livePeVerified(s){ return finiteMetric(scrQuotes[s.code]&&scrQuotes[s.code].pe); }
+function selectAnnual(rows){ return rows.filter(r=>String(r.REPORTDATE||'').slice(5,10)==='12-31'&&/年报/.test(r.DATATYPE||'')&&!/半年/.test(r.DATATYPE||'')).sort((a,b)=>String(b.REPORTDATE).localeCompare(String(a.REPORTDATE)))[0]||null; }
+function sumTrailingDividends(rows,asOf){
+  var end=new Date(asOf+'T00:00:00Z'),start=new Date(end);start.setUTCFullYear(start.getUTCFullYear()-1);
+  var seen=new Set(),sum=0;
+  rows.forEach(r=>{
+    var date=String(r.EX_DIVIDEND_DATE||'').slice(0,10),t=new Date(date+'T00:00:00Z');
+    if(r.ASSIGN_PROGRESS!=='实施分配'||!Number.isFinite(t.getTime())||t<=start||t>end) return;
+    if([r.BONUS_IT_RATIO,r.BONUS_RATIO,r.IT_RATIO].some(v=>finiteMetric(v)!==null&&v>0))throw new Error('存在送转，需核验每股单位调整');
+    var amount=finiteMetric(r.PRETAX_BONUS_RMB),key=date+'|'+String(r.REPORT_DATE);
+    if(amount===null||amount<0||seen.has(key)) return;
+    seen.add(key);sum+=amount/10;
+  });
+  return sum;
+}
+async function finRows(report,code,size,sort){
+  var query=new URLSearchParams({reportName:report,columns:'ALL',filter:'(SECURITY_CODE="'+code+'")',pageSize:String(size),pageNumber:'1',sortColumns:sort,sortTypes:'-1'});
+  var response=await fetch('https://datacenter-web.eastmoney.com/api/data/v1/get?'+query);
+  if(!response.ok) throw new Error('财报接口请求失败');
+  var data=await response.json();
+  if(!data.success||!data.result||!Array.isArray(data.result.data)) throw new Error('财报数据不可用');
+  if(data.result.pages>1&&report==='RPT_SHAREBONUS_DET') throw new Error('分红事件未完整返回');
+  return data.result.data;
+}
+async function fetchOneFin(s){
+  var f={source:'real',roe:null,gm:null,debt:null,dy:null,dps:null,reportDate:'',dividendVerified:false,annualHistory:[]};
+  // Independent requests: failure of one field does not erase another verified field.
+  await Promise.allSettled([
+    (async()=>{var rows=await finRows('RPT_LICO_FN_CPD',s.code,100,'REPORTDATE'),a=selectAnnual(rows);if(!a)return;f.roe=finiteMetric(a.WEIGHTAVG_ROE);f.gm=finiteMetric(a.XSMLL);f.reportDate=a.REPORTDATE.slice(0,10);f.annualHistory=rows.filter(r=>/12-31/.test(r.REPORTDATE||'')).map(r=>({year:+r.REPORTDATE.slice(0,4),roe:finiteMetric(r.WEIGHTAVG_ROE)}));})(),
+    (async()=>{var rows=await finRows('RPT_DMSK_FN_BALANCE',s.code,100,'REPORT_DATE');if(rows[0]){f.debt=finiteMetric(rows[0].DEBT_ASSET_RATIO);f.balanceDate=String(rows[0].REPORT_DATE).slice(0,10);}})(),
+    (async()=>{var rows=await finRows('RPT_SHAREBONUS_DET',s.code,100,'EX_DIVIDEND_DATE');var today=new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'});f.dps=sumTrailingDividends(rows,today);f.dividendVerified=true;f.dividendDate=today;})()
+  ]);
+  scrFin[s.code]=f;
+}
+async function fetchFinData(){
+  var list=stocks.filter(s=>s.market==='A股');
+  for(var i=0;i<list.length;i+=4){await Promise.allSettled(list.slice(i,i+4).map(fetchOneFin));renderStocks();}
+}
+function getValPercentile(){return null;}
+function renderValPercentile(){return '<div class="scr-val-pct">历史估值分位：待核验（尚未接入历史 PE 序列）</div>';}
+function getValLabel(){return '待核验';}
+function calcSignalScore(){return 0;}
+function renderSignal(){return '<div class="scr-signal wait"><div class="scr-signal-body"><b>待研究 · 证据不足</b><div>缺少经核验的历史估值及完整基本面证据，暂不生成买点或综合评分。</div></div></div>';}
+function renderSignalCompact(s){
+  var roe=scrMetric(s,'roe'),dy=scrMetric(s,'dy'),pe=livePeVerified(s);
+  return '<div class="scr-signal-compact"><span class="scr-sig-chip wait">待核验 · 无评分</span><div class="scr-sig-quick">ROE '+(roe===null?'—':roe.toFixed(1)+'%')+' · PE '+(pe>0?pe.toFixed(1):'—')+' · 股息率(TTM) '+(dy===null?'—':dy.toFixed(2)+'%')+'</div></div>';
+}
+function renderConsistency(s){
+  var f=scrFin[s.code],a=f&&f.annualHistory||[],years=new Map(a.map(r=>[r.year,r.roe])),latest=f&&f.reportDate?+f.reportDate.slice(0,4):null;
+  var consistent=latest!==null&&[0,1,2].every(n=>finiteMetric(years.get(latest-n))!==null&&years.get(latest-n)>=15);
+  return '<div class="scr-consistency">'+(consistent?'近3个连续年度ROE均≥15%':'连续年度ROE：未确认达标')+' · 自由现金流：待核验 · 护城河简评：人工研究观点</div>';
+}
+function getBondCmpData(s){
+  var dy=scrMetric(s,'dy');if(dy===null)return null;
+  var us=s.market==='美股'||s.market==='ETF'||s.market==='指数',rate=us?BOND_YIELD_US:BOND_YIELD_CN;
+  if(s.market==='港股')return null; // No verified HKD benchmark available.
+  return {dy:dy,bondRate:rate,win:dy>=rate,spread:dy-rate,market:us?'美国':'中国'};
+}
+function renderBondCmp(s){var bc=getBondCmpData(s);return bc?'<div class="scr-bond-cmp">税前股息率(TTM) '+bc.dy.toFixed(2)+'% · '+bc.market+'10年国债手动参考值 '+bc.bondRate.toFixed(1)+'%（无自动更新时间；风险不同，不代表等价收益）</div>':'<div class="scr-bond-cmp">股息或同币种国债数据未核验，暂不比较</div>';}
+function updateScanBanner(){var el=$('scrScanBanner');if(el){el.style.display='';el.innerHTML='<div class="scr-scan-body"><b>研究数据状态</b><div>历史估值分位与综合买点评分暂未启用。财报按报告期展示；股息率按过去12个月已实施除息记录计算。缺失值不视为通过筛选。</div></div>';}var toast=$('scrSignalToast');if(toast)toast.classList.remove('show');}
+function showSignalToast(){}
+function resetScreener(){scrMarket='全部';scrQuery='';scrSort='val';$('scrQ').value='';COND_DEFS.forEach(c=>{scrConds[c.id]={on:!['fcf','moat','div'].includes(c.id),val:c.def};});hideScrHistory();renderScreener();}
+function condTest(s,cd){
+  var c=scrConds[cd.id],v;
+  switch(cd.id){
+    case 'roe':v=scrMetric(s,'roe');return v!==null&&v>=c.val;
+    case 'gm':v=scrMetric(s,'gm');return v!==null&&v>=c.val;
+    case 'debt':v=scrMetric(s,'debt');return !s.bank&&v!==null&&v<=c.val;
+    case 'pe':v=livePeVerified(s);return !isFund(s)&&v!==null&&v>0&&v<=c.val;
+    // No audited FCF, moat or multi-year distributions dataset is connected.
+    case 'fcf':case 'moat':case 'div':return false;
+    default:return false;
+  }
+}
+function sortStocks(list){
+  function value(s){if(scrSort==='roe')return scrMetric(s,'roe');if(scrSort==='dy')return scrMetric(s,'dy');if(scrSort==='pe')return livePeVerified(s);return null;}
+  return list.slice().sort((a,b)=>{var x=value(a),y=value(b);if(x===null&&y===null)return 0;if(x===null)return 1;if(y===null)return -1;return scrSort==='pe'?x-y:y-x;});
+}
+function runBacktest(){var box=$('btResult');if(box){box.style.display='block';box.innerHTML='<div class="bt-munger"><b>历史回测暂不可用</b><p>原演示价格及分红加总不能代表真实历史回报。待接入除权、分红事件和再投资价格后，再提供可核验的回测结果。</p></div>';}}
+if(typeof module!=='undefined')module.exports={selectAnnual,sumTrailingDividends,finiteMetric};
+if(typeof document!=='undefined'){
+  // Unsupported evidence conditions remain available, but are never silently
+  // enabled for the initial view or represented as verified facts.
+  ['fcf','moat','div'].forEach(id=>{if(scrConds[id])scrConds[id].on=false;});
+  COND_DEFS.forEach(c=>{if(['fcf','moat','div'].includes(c.id)){c.desc='待接入核验数据；启用后无证据不通过';c.explain='当前尚未接入足以核验该条件的数据。人工观点或静态标记不算通过证据。';}});
+  function integrityReady(){renderScreener();if($('view-deposit')&&$('view-deposit').classList.contains('active'))calcCompound();}
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',integrityReady);else integrityReady();
+}
+
+/* DATA_INTEGRITY_END */
+
 /* init */
 renderPlan();calcCompound();renderScreener();renderScrHistory();initBtSuggest();renderToolGrid();buildToolPanels();renderDepHistory(loadDepHistory());renderDivHistory(loadDivHistory());initDvStockLib();renderLnHistory(loadLnHistory());renderDebts();renderEtfTable();initSpDropdowns();renderTrHistory(loadTrHistory());initMulti();renderCrHistory(loadCrHistory());renderCpHistory(loadCpHistory());renderKb();refreshHeader();renderRecNav();initLuckyCat();renderFootContact(); applyOwnerMode(); renderFbContactInfo();
 
@@ -18935,5 +18083,7 @@ if(document.readyState!=='loading') initUI(); else document.addEventListener('DO
   <div class="lc-bubble" id="lcBubble" style="display:none"></div>
   <button class="lc-close" onclick="lcHide(event)" title="让猫休息一会儿">×</button>
 </div>
+
 </body>
 </html>
+
