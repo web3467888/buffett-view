@@ -115,16 +115,41 @@ def get_dividends(s):
     values=[v['amount'] for v in events.get('dividends',{}).values() if str(TODAY.replace(year=TODAY.year-1))<dt.datetime.fromtimestamp(v['date'],dt.timezone.utc).date().isoformat()<=str(TODAY)]
     if any(not finite(v) or v<0 for v in values):raise ValueError('missing dividend amount')
     return field(sum(values),url,str(TODAY),currency=meta['currency'],definition='Yahoo已发生现金分红事件TTM')
+
+def dividend_continuity(events,url):
+    years=list(range(TODAY.year-3,TODAY.year));paid={year:False for year in years}
+    for date,amount in events:
+        try:date=dt.date.fromisoformat(str(date)[:10])
+        except (TypeError,ValueError):raise ValueError('invalid dividend event date')
+        if date.year not in paid:continue
+        if not finite(amount) or amount<0:raise ValueError('missing dividend amount')
+        if amount>0:paid[date.year]=True
+    return field(all(paid.values()),url,str(TODAY),years=years,paidYears=[year for year in years if paid[year]],definition='最近3个完整自然年，每年均有已发生现金分红（按除息日期）；不以回购或分红预案代替')
+
+def get_dividend_continuity(s):
+    if s['market']=='A股':
+        data,url=rows('RPT_SHAREBONUS_DET',s['code'],size=200,sort='EX_DIVIDEND_DATE')
+        events=[(r.get('EX_DIVIDEND_DATE'),r.get('PRETAX_BONUS_RMB')) for r in data if r.get('ASSIGN_PROGRESS')=='实施分配' and r.get('EX_DIVIDEND_DATE')]
+        return dividend_continuity(events,url)
+    code=s['code'];symbol=(code+('.SS' if code[0] in '56' else '.SZ')) if re.fullmatch(r'\d{6}',code) else (code.lstrip('0').zfill(4)+'.HK') if s['market']=='港股' else code.replace('.','-')
+    url='https://query1.finance.yahoo.com/v8/finance/chart/'+symbol+'?range=5y&interval=1mo&events=div%2Csplits'
+    data=request(url)['chart']['result'][0];start=dt.date(TODAY.year-3,1,1)
+    stamps=data.get('timestamp') or []
+    if not stamps or dt.datetime.fromtimestamp(stamps[0],dt.timezone.utc).date()>start+dt.timedelta(days=10):raise ValueError('dividend history does not cover all 3 years')
+    dividends=data.get('events',{}).get('dividends',{})
+    events=[(dt.datetime.fromtimestamp(v['date'],dt.timezone.utc).date().isoformat(),v.get('amount')) for v in dividends.values()]
+    return dividend_continuity(events,url)
 def main():
     text=(ROOT/'index.html').read_text(encoding='utf-8');block=text.split('const stocks=[',1)[1].split('\n];',1)[0]
     stocks=[dict(zip(['code','name','market'],m)) for m in re.findall(r"\{code:'([^']+)',name:'([^']+)'.*?market:'([^']+)'",block)]
     data=json.loads(OUT.read_text(encoding='utf-8')) if OUT.exists() else {'schema':2,'stocks':{}}
-    history_only='--history-only' in sys.argv;subset=set(x for x in sys.argv[1:] if not x.startswith('--'));targets=[s for s in stocks if not subset or s['code'] in subset]
+    history_only='--history-only' in sys.argv;dividends_only='--dividends-only' in sys.argv;subset=set(x for x in sys.argv[1:] if not x.startswith('--'));targets=[s for s in stocks if not subset or s['code'] in subset]
     for s in targets:
         record=data['stocks'].setdefault(s['code'],{});record.update(name=s['name'],market=s['market']);errors={}
-        if history_only:tasks=[] if s['market'] in ['ETF','指数'] or s['code']=='VOO' else [('history',get_history)]
-        elif s['market'] in ['ETF','指数'] or s['code']=='VOO':tasks=[('dps',get_dividends)]
-        else:tasks=[('fundamentals',get_fundamentals),('history',get_history),('dps',get_dividends)]
+        if dividends_only:tasks=[('dividendContinuity',get_dividend_continuity)]
+        elif history_only:tasks=[] if s['market'] in ['ETF','指数'] or s['code']=='VOO' else [('history',get_history)]
+        elif s['market'] in ['ETF','指数'] or s['code']=='VOO':tasks=[('dps',get_dividends),('dividendContinuity',get_dividend_continuity)]
+        else:tasks=[('fundamentals',get_fundamentals),('history',get_history),('dps',get_dividends),('dividendContinuity',get_dividend_continuity)]
         for key,fn in tasks:
             try:
                 result=fn(s)
@@ -132,7 +157,7 @@ def main():
                 else:record[key]=result
             except Exception as e:errors[key]=str(e)[:160]
             time.sleep(.12)
-        if history_only:record.setdefault('errors',{}).pop('history',None);record['errors'].update(errors)
+        if history_only or dividends_only:record.setdefault('errors',{}).pop('dividendContinuity' if dividends_only else 'history',None);record['errors'].update(errors)
         else:record['errors']=errors
         data['generatedAt']=dt.datetime.now(dt.timezone.utc).isoformat();data['asOf']=str(TODAY)
         tmp=OUT.with_suffix('.json.tmp');tmp.write_text(json.dumps(data,ensure_ascii=False,separators=(',',':')),encoding='utf-8');tmp.replace(OUT)

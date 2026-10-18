@@ -43,4 +43,22 @@ class LatestPERegression(unittest.TestCase):
         finally:
             updater.request=original_request
 
+class DividendContinuityRegression(unittest.TestCase):
+    def setUp(self):
+        self.original_today=updater.TODAY
+        updater.TODAY=dt.date(2026,10,18)
+
+    def tearDown(self):updater.TODAY=self.original_today
+
+    def test_requires_every_complete_year(self):
+        good=[('2023-06-01',1),('2024-06-01',1),('2025-06-01',1)]
+        result=updater.dividend_continuity(good,'https://example.org')
+        self.assertTrue(result['value'])
+        self.assertEqual(result['years'],[2023,2024,2025])
+        self.assertFalse(updater.dividend_continuity(good[1:]+[('2026-06-01',1)],'https://example.org')['value'])
+
+    def test_zero_or_invalid_amount_is_not_positive_dividend(self):
+        self.assertFalse(updater.dividend_continuity([('2023-06-01',0)],'https://example.org')['value'])
+        with self.assertRaises(ValueError):updater.dividend_continuity([('2023-06-01',None)],'https://example.org')
+
 if __name__=='__main__':unittest.main()
