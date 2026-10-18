@@ -15,6 +15,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.11'
+      - run: python -m unittest discover -p '*_test.py'
       - run: python update-research-data.py
       - uses: actions/setup-node@v4
         with:

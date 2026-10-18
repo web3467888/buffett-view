@@ -30,12 +30,15 @@ def cash_value(items,code):
 def history_record(entries,url):
     unique={}
     for date,pe in entries:
-        if isinstance(date,str) and finite(pe) and pe>0 and str(TODAY.replace(year=TODAY.year-10))<=date[:10]<=str(TODAY):unique[date[:10]]=pe
+        if isinstance(date,str) and str(TODAY.replace(year=TODAY.year-10))<=date[:10]<=str(TODAY):
+            # Keep the newest observation even when PE is not meaningful.
+            unique[date[:10]]=pe if finite(pe) else None
+    if not unique:raise ValueError('no dated PE observations')
     dates=sorted(unique);monthly={}
     for date in dates:monthly[date[:7]]=date
-    chosen=sorted(monthly.values())
+    chosen=sorted(date for date in monthly.values() if finite(unique[date]) and unique[date]>0)
     if len(chosen)<24:raise ValueError('history shorter than 24 monthly observations')
-    return field(sorted(unique[d] for d in chosen),url,dates[-1],start=chosen[0],end=dates[-1],count=len(chosen),rawCount=len(dates),frequency='monthly-last-available',latestPE=unique[dates[-1]])
+    return field(sorted(unique[d] for d in chosen),url,dates[-1],start=chosen[0],end=dates[-1],sampleEnd=chosen[-1],count=len(chosen),rawCount=len(dates),frequency='monthly-last-available',latestObservationDate=dates[-1],latestPE=unique[dates[-1]])
 def get_history(s):
     code=s['code']
     if s['market']=='A股':
@@ -47,8 +50,10 @@ def get_history(s):
     points=[]
     for r in d:
         vals=list(r.values()) if isinstance(r,dict) else r
-        try: points.append((str(vals[0]),float(vals[1])))
-        except (TypeError,ValueError,IndexError):continue
+        if not isinstance(vals,(list,tuple)) or len(vals)<2:continue
+        try: pe=float(vals[1])
+        except (TypeError,ValueError):pe=None
+        points.append((str(vals[0]),pe))
     return history_record(points,url)
 def get_fundamentals(s):
     code=s['code'];market=s['market'];out={}

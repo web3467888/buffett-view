@@ -2,6 +2,7 @@
 var researchSnapshot={stocks:{}},researchLoading=false,researchError='',scrRefreshPromise=null;
 var scrExpanded=new Set();
 var BOND_YIELD_HK=null;
+var bondInputErrors={};
 function escapeResearch(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
 function todayCN(){return new Date().toLocaleDateString('sv-SE',{timeZone:'Asia/Shanghai'});}
 function daysOld(date){var n=date?Math.floor((Date.parse(todayCN()+'T00:00:00Z')-Date.parse(String(date).slice(0,10)+'T00:00:00Z'))/86400000):Infinity;return Number.isFinite(n)?n:Infinity;}
@@ -11,8 +12,8 @@ function quoteUsable(q){return !!q&&finiteMetric(q.price)!==null&&q.price>0&&day
 function scrMetric(s,key){if(isFund(s)&&['roe','gm','debt','fcf'].includes(key))return null;var f=researchField(s,key==='dy'?'dps':key);if(!f)return null;if(key==='dy'){var q=scrQuotes[s.code];return quoteUsable(q)&&q.price>0?f.value/q.price*100:null;}return finiteMetric(f.value);}
 function livePeVerified(s){var q=scrQuotes[s.code];return quoteUsable(q)&&q.pe>0?finiteMetric(q.pe):null;}
 function getValPercentile(s){
-  if(isFund(s))return null;var h=researchField(s,'history');if(!h||!Array.isArray(h.value)||h.value.length<24||h.frequency!=='monthly-last-available'||daysOld(h.end)>7)return null;
-  var pe=finiteMetric(h.latestPE);if(!(pe>0))return null;var a=h.value.filter(v=>finiteMetric(v)!==null&&v>0),less=a.filter(v=>v<pe).length,equal=a.filter(v=>v===pe).length;
+  if(isFund(s))return null;var h=researchField(s,'history');if(!h||!Array.isArray(h.value)||h.frequency!=='monthly-last-available'||!h.latestObservationDate||h.latestObservationDate!==h.end||daysOld(h.end)>7||daysOld(h.end)<-1)return null;
+  var pe=finiteMetric(h.latestPE);if(!(pe>0))return null;var a=h.value.filter(v=>finiteMetric(v)!==null&&v>0);if(a.length<24)return null;var less=a.filter(v=>v<pe).length,equal=a.filter(v=>v===pe).length;
   return {pct:(less+equal*.5)/a.length*100,pe:pe,start:h.start,end:h.end,count:a.length,source:h.source};
 }
 function renderValPercentile(s){var p=getValPercentile(s);return '<div class="scr-val-pct">'+(p?'历史PE(TTM)位置 '+p.pct.toFixed(1)+'% · 同源PE '+p.pe.toFixed(2)+' · '+p.start+'—'+p.end+' · '+p.count+'个月度末次样本（各月等权，非内在价值）':'历史PE位置：'+(isFund(s)?'不适用公司PE模型':'数据不足或过期，未使用经验区间替代'))+'</div>';}
@@ -20,18 +21,22 @@ function moatReview(s){var r=kvGet('scr_moat_reviews',{})[s.code];return r&&days
 function saveMoatReview(code){var url=($('moat-source-'+code)?.value||'').trim();try{if(new URL(url).protocol!=='https:')throw Error();}catch(e){alert('请填写可核查的HTTPS证据链接');return;}var all=kvGet('scr_moat_reviews',{});all[code]={date:todayCN(),source:url};kvSet('scr_moat_reviews',all);renderStocks();}
 function qualityStatus(s){
   if(isFund(s))return {state:'na',text:'基金需独立评估，不适用企业质量门槛'};if(s.bank||['BRK.B','01299'].includes(s.code))return {state:'unknown',text:'金融业需另核验资本、资产质量及偿付能力'};
-  var h=researchField(s,'annualRoe'),fcf=scrMetric(s,'fcf'),missing=[],failed=[];
+  var h=researchField(s,'annualRoe'),cash=researchField(s,'fcf'),fcf=scrMetric(s,'fcf'),missing=[],failed=[];
   if(typeof getCircleCheck==='function'&&getCircleCheck(s.code)==='no')failed.push('你已标记不理解该生意');
   if(!h||!Array.isArray(h.value))missing.push('连续年度ROE');else{var year=+h.period.slice(0,4),m=new Map(h.value.map(x=>[x.year,x.roe])),v=[0,1,2].map(n=>finiteMetric(m.get(year-n)));if(v.some(x=>x===null))missing.push('连续3年ROE');else if(v.some(x=>x<15))failed.push('近3年ROE并非每年≥15%');}
-  if(fcf===null)missing.push('年度自由现金流');else if(fcf<=0)failed.push('年度自由现金流不为正');
+  if(fcf===null)missing.push('年度自由现金流');else if(!h||cash.period!==h.period)missing.push('自由现金流与最新年度ROE报告期不一致，待同年度数据');else if(fcf<=0)failed.push('年度自由现金流不为正');
   if(s.moat==='弱')failed.push('人工护城河标签为弱');else if(!moatReview(s))missing.push('护城河证据待人工复核');
   return failed.length?{state:'fail',text:failed.join('；')}:missing.length?{state:'unknown',text:missing.join('；')}:{state:'pass',text:'近3年ROE≥15%、年度FCF为正、护城河证据已人工记录'};
 }
 function getBondCmpData(s){var dy=scrMetric(s,'dy');if(dy===null)return null;var us=s.market==='美股'||(isFund(s)&&!/^\d{6}$/.test(s.code)),hk=s.market==='港股',rate=hk?BOND_YIELD_HK:us?BOND_YIELD_US:BOND_YIELD_CN;return finiteMetric(rate)!==null?{dy:dy,bondRate:rate,win:dy>=rate,spread:dy-rate,market:hk?'香港':us?'美国':'中国',assumption:true}:null;}
-function updateBondHK(value){var rate=Number(value);BOND_YIELD_HK=value!==''&&Number.isFinite(rate)&&rate>=0&&rate<=10?rate:null;renderStocks();}
+function updateBondAssumption(market,value){var text=String(value??'').trim(),rate=text===''?null:Number(text),valid=rate!==null&&Number.isFinite(rate)&&rate>=0&&rate<=10;bondInputErrors[market]=text!==''&&!valid?'请输入0—10之间的数值；当前未设置，不参与评分。':'';rate=valid?rate:null;if(market==='CN')BOND_YIELD_CN=rate;else if(market==='US')BOND_YIELD_US=rate;else BOND_YIELD_HK=rate;renderStocks();}
+function updateBondCN(value){updateBondAssumption('CN',value);}
+function updateBondUS(value){updateBondAssumption('US',value);}
+function updateBondHK(value){updateBondAssumption('HK',value);}
+function renderBondInput(market,label,value){return label+' <input aria-label="'+label+'国债手动假设" aria-describedby="bond-error-'+market+'" type="number" min="0" max="10" step="0.1" value="'+(value===null?'':value)+'" placeholder="未设置" onchange="updateBond'+market+'(this.value)">%<span id="bond-error-'+market+'" role="alert">'+escapeResearch(bondInputErrors[market]||'')+'</span>';}
 function signalDetails(s){
   if(isFund(s))return {score:null,missing:['基金不适用此公司评分']};var p=getValPercentile(s),b=getBondCmpData(s),roe=scrMetric(s,'roe'),missing=[];
-  if(!p)missing.push('历史PE');if(!b)missing.push(s.market==='港股'?'港币国债基准或股息':'股息/价格');if(roe===null)missing.push('年度ROE');if(missing.length)return {score:null,missing:missing};
+  if(!p){var h=researchField(s,'history');missing.push(h?.latestObservationDate&&!(finiteMetric(h.latestPE)>0)?'最新同源PE非正或缺失（PE模型不适用）':'历史PE');}if(!b)missing.push(s.market==='港股'?'港币国债基准或股息':'股息/价格或国债基准');if(roe===null)missing.push('年度ROE');if(missing.length)return {score:null,missing:missing};
   var v=p.pct<30?50:p.pct<50?25:p.pct>70?-20:5,d=b.win?30:-10,m=s.moat&&s.moat!=='弱'?15:0,r=roe>=15?5:0;
   return {score:Math.max(0,Math.min(100,v+d+m+r)),factors:[['历史PE位置',v],['股息vs手动国债假设',d],['原站人工护城河标签',m],['年度ROE',r]],pct:p.pct};
 }
@@ -64,7 +69,7 @@ function renderStocks(){
     return '<div class="scr-stock'+(scrExpanded.has(s.code)?' expanded':'')+'" id="card-'+s.code+'"><div class="scr-stock-head"><button type="button" style="border:0;background:transparent;text-align:left" aria-expanded="'+scrExpanded.has(s.code)+'" onclick="toggleCard(\''+s.code+'\')"><b>'+escapeResearch(s.name)+'</b> '+escapeResearch(s.market)+' '+s.code+' · '+(scrExpanded.has(s.code)?'收起':'展开')+'</button><button class="scr-fav" title="'+(favs.includes(s.code)?'取消收藏':'收藏')+'" onclick="toggleFav(\''+s.code+'\')">'+(favs.includes(s.code)?'★':'☆')+'</button></div><div>'+escapeResearch(status)+'</div>'+(q?'<div class="scr-quote-bar">'+fmtPrice(q.price,s.market,s.code)+' · PE '+(q.pe>0?q.pe.toFixed(2):'—')+' · '+escapeResearch(q.time||'')+(quoteUsable(q)?'':' · 已过期/不可评分')+'</div>':'<div>行情'+(researchLoading?'加载中':'缺失')+'</div>')+renderSignalCompact(s)+'<div class="scr-stock-detail"><div class="scr-metrics">'+metrics+'</div>'+renderConsistency(s)+renderValPercentile(s)+renderBondCmp(s)+renderSignal(s)+'<p>原站人工护城河标签：'+escapeResearch(s.moat)+' · '+escapeResearch(s.moatBrief)+'</p><label>护城河证据链接 <input id="moat-source-'+s.code+'" type="url" placeholder="https://…" value="'+escapeResearch(moatReview(s)?.source||'')+'"></label><button class="scr-btn" onclick="saveMoatReview(\''+s.code+'\')">记录已人工核验</button>'+renderCircleCheck(s)+'<details><summary>字段来源与报告期</summary>'+sources+'<p>FCF统一测算：'+escapeResearch(record.fcf?.definition||'未取得')+'。单位沿用来源报表币种，不能跨币种比较金额。各字段日期分别展示，缺失不使用手填财务数替代。</p></details></div></div>';
   }).join('')||'<div class="scr-empty">'+(researchLoading?'数据加载中，未将缺失当成不合格。':!list.length?'当前搜索或收藏范围没有匹配标的。':'已核验数据未满足启用条件；可关闭条件查看研究池。')+'<br><button class="scr-btn" onclick="resetScreener()">重置搜索、条件及收藏过滤</button></div>';updateScanBanner();
 }
-function updateScanBanner(){var el=$('scrScanBanner');if(!el)return;el.style.display='';el.innerHTML='<div class="scr-scan-body"><b>先质量核验，再看逆向研究分</b><p>固定收录'+stocks.length+'只标的，非全市场。历史PE按实际样本计算；分数0—100，质量未通过或缺证据时不形成机会信号。</p><small>'+escapeResearch(researchLoading?'正在加载；保留上次成功数据':researchError||'研究快照日期：'+(researchSnapshot.asOf||'未取得'))+'</small><div>国债手动假设（模型参数，非自动行情）：中国 <input aria-label="中国国债手动假设" type="number" min="0" max="20" step="0.1" value="'+BOND_YIELD_CN+'" onchange="updateBondCN(this.value)">% 美国 <input aria-label="美国国债手动假设" type="number" min="0" max="20" step="0.1" value="'+BOND_YIELD_US+'" onchange="updateBondUS(this.value)">%；香港 <input aria-label="香港国债手动假设" type="number" min="0" max="10" step="0.1" value="'+(BOND_YIELD_HK===null?'':BOND_YIELD_HK)+'" placeholder="未设置" onchange="updateBondHK(this.value)">%；空值不计分。历史PE来自研究快照；网页刷新不重建历史序列。</div></div>';var toast=$('scrSignalToast');if(toast)toast.classList.remove('show');}
+function updateScanBanner(){var el=$('scrScanBanner');if(!el)return;el.style.display='';el.innerHTML='<div class="scr-scan-body"><b>先质量核验，再看逆向研究分</b><p>固定收录'+stocks.length+'只标的，非全市场。历史PE按实际样本计算；分数0—100，质量未通过或缺证据时不形成机会信号。</p><small>'+escapeResearch(researchLoading?'正在加载；保留上次成功数据':researchError||'研究快照日期：'+(researchSnapshot.asOf||'未取得'))+'</small><div>国债手动假设（模型参数，非自动行情）：'+renderBondInput('CN','中国',BOND_YIELD_CN)+' '+renderBondInput('US','美国',BOND_YIELD_US)+'；'+renderBondInput('HK','香港',BOND_YIELD_HK)+'；空值不计分。历史PE来自研究快照；网页刷新不重建历史序列。</div></div>';var toast=$('scrSignalToast');if(toast)toast.classList.remove('show');}
 async function timedFetch(url){var c=new AbortController(),t=setTimeout(()=>c.abort(),18000);try{var r=await fetch(url,{signal:c.signal,cache:'no-store'});if(!r.ok)throw Error('HTTP '+r.status);return r;}finally{clearTimeout(t);}}
 async function readResearchSnapshot(){var r=await timedFetch('research-data.json'),data=await r.json();if(data.schema!==2||!data.stocks)throw Error('研究快照格式错误');researchSnapshot=data;Object.entries(data.stocks).forEach(([code,v])=>scrFin[code]={source:'real',roe:v.roe?.value??null,gm:v.gm?.value??null,debt:v.debt?.value??null,reportDate:v.roe?.period||''});}
 function parseQuoteResponse(text){var out={},re=/v_(\S+?)="([^"]*)"/g,m;while((m=re.exec(text))!==null){var s=stocks.find(x=>qtCode(x)===m[1]);if(!s)continue;var f=m[2].split('~'),price=Number(f[3]),raw=f[30]||'',date=/^\d{14}$/.test(raw)?raw.slice(0,4)+'-'+raw.slice(4,6)+'-'+raw.slice(6,8):raw.slice(0,10).replace(/\//g,'-');if(!f[3]||!Number.isFinite(price)||price<=0)continue;out[s.code]={price:price,pe:f[39]&&Number(f[39])>0?Number(f[39]):null,chg:price-Number(f[4]),chgPct:finiteMetric(Number(f[32])),time:fmtQtTime(raw),date:date,receivedAt:new Date().toISOString()};}return out;}
