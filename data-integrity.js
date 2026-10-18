@@ -97,7 +97,6 @@ if(typeof document!=='undefined'){
   // Unsupported evidence conditions remain available, but are never silently
   // enabled for the initial view or represented as verified facts.
   ['fcf','moat','div'].forEach(id=>{if(scrConds[id])scrConds[id].on=false;});
-  COND_DEFS.forEach(c=>{if(['fcf','moat','div'].includes(c.id)){c.desc='待接入核验数据；启用后无证据不通过';c.explain='当前尚未接入足以核验该条件的数据。人工观点或静态标记不算通过证据。';}});
   function integrityReady(){renderScreener();if($('view-deposit')&&$('view-deposit').classList.contains('active'))calcCompound();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',integrityReady);else integrityReady();
 }
