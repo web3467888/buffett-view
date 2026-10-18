@@ -22,7 +22,8 @@ function sumTrailingDividends(rows,asOf){
     if(r.ASSIGN_PROGRESS!=='实施分配'||!Number.isFinite(t.getTime())||t<=start||t>end) return;
     if([r.BONUS_IT_RATIO,r.BONUS_RATIO,r.IT_RATIO].some(v=>finiteMetric(v)!==null&&v>0))throw new Error('存在送转，需核验每股单位调整');
     var amount=finiteMetric(r.PRETAX_BONUS_RMB),key=date+'|'+String(r.REPORT_DATE);
-    if(amount===null||amount<0||seen.has(key)) return;
+    if(amount===null||amount<0)throw new Error('已实施分红金额不完整');
+    if(seen.has(key))return;
     seen.add(key);sum+=amount/10;
   });
   return sum;
@@ -100,4 +101,3 @@ if(typeof document!=='undefined'){
   function integrityReady(){renderScreener();if($('view-deposit')&&$('view-deposit').classList.contains('active'))calcCompound();}
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',integrityReady);else integrityReady();
 }
-
